@@ -1,4 +1,6 @@
 from datetime import date, timedelta
+from PIL import ImageOps, ImageTk, Image
+import tkinter as tk
 
 class Data():
     def __init__(self):
@@ -122,12 +124,30 @@ class Participant():
             func(assignment, beginDate, endDate, exclude)
 
 class Seat():
-    def __init__(self, x1, y1, x2, y2):
+    def __init__(self, x1, y1, x2, y2, rot=0):
         self.x1 = x1
         self.y1 = y1
         self.x2 = x2
         self.y2 = y2
         self.assignments = []
+        self.rot = rot
+        self.img = Image.open('./img/Desk.png')
+
+        self.offset_x = 0
+        self.offset_x = 0
+        self.offset_y = 0
+
+        if self.rot == 0:
+            pass
+        elif self.rot == 1:
+            self.offset_y = 1
+            self.offset_x = -1
+        elif self.rot == 3:
+            self.offset_x = -40
+            self.offset_y = 1
+        elif self.rot == 2:
+            self.offset_y = -37
+
     def getParticipant(self, date):
         for assignment in iter(self.assignments):
             if assignment.begin < date and assignment.end > date:
@@ -142,6 +162,11 @@ class Seat():
     def doAssignmentsByTime(self, beginDate, endDate, func):
         for assignment in iter(self.assignments):
             func(assignment, beginDate, endDate)
+    def draw(self, roomImg:Image):
+        
+        img = self.img.rotate(self.rot*90,resample=Image.BILINEAR)
+        roomImg.alpha_composite(img, (self.x1+self.offset_x, self.y1+self.offset_y))
+        return roomImg
 
 class Assignment():
     def __init__(self, participant, seat, begin, end):
@@ -161,22 +186,22 @@ class Error():
 class ITLOFT(Data):
     def __init__(self):
         super().__init__()
-        self.seats.append(Seat(161, 362, 255, 497))
-        self.seats.append(Seat(258, 362, 352, 497))
-        self.seats.append(Seat(161, 596, 255, 731))
-        self.seats.append(Seat(258, 596, 352, 731))
-        self.seats.append(Seat(161, 884, 255, 1019))
-        self.seats.append(Seat(258, 884, 352, 1019))
-        self.seats.append(Seat(630, 569, 765, 663))
-        self.seats.append(Seat(630, 666, 765, 760))
-        self.seats.append(Seat(768, 597, 862, 732))
-        self.seats.append(Seat(1113, 742, 1248, 836))
-        self.seats.append(Seat(1113, 645, 1248, 739))
-        self.seats.append(Seat(1394, 742, 1529, 836))
-        self.seats.append(Seat(1394, 645, 1529, 739))
-        self.seats.append(Seat(1396, 264, 1531, 358))
-        self.seats.append(Seat(1113, 264, 1248, 358))
-        self.seats.append(Seat(976, 232, 1069, 367))
-        self.seats.append(Seat(975, 37, 1068, 172))
-        self.seats.append(Seat(627, 232, 721, 367))
-        self.seats.append(Seat(627, 37, 721, 172))
+        self.seats.append(Seat(161, 362, 255, 497, 3))
+        self.seats.append(Seat(258, 362, 352, 497, 1))
+        self.seats.append(Seat(161, 596, 255, 731, 3))
+        self.seats.append(Seat(258, 596, 352, 731, 1))
+        self.seats.append(Seat(161, 884, 255, 1019, 3))
+        self.seats.append(Seat(258, 884, 352, 1019, 1))
+        self.seats.append(Seat(630, 569, 765, 663, 2))
+        self.seats.append(Seat(630, 666, 765, 760, 0))
+        self.seats.append(Seat(768, 597, 862, 732, 1))
+        self.seats.append(Seat(1113, 742, 1248, 836, 0))
+        self.seats.append(Seat(1113, 645, 1248, 739, 2))
+        self.seats.append(Seat(1394, 742, 1529, 836, 0))
+        self.seats.append(Seat(1394, 645, 1529, 739, 2))
+        self.seats.append(Seat(1396, 264, 1531, 358, 2))
+        self.seats.append(Seat(1113, 264, 1248, 358, 2))
+        self.seats.append(Seat(976, 232, 1069, 367, 3))
+        self.seats.append(Seat(975, 37, 1068, 172, 3))
+        self.seats.append(Seat(627, 232, 721, 367, 1))
+        self.seats.append(Seat(627, 37, 721, 172, 1))

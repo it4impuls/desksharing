@@ -1,5 +1,6 @@
 import data
 from datetime import date, timedelta
+import os
 
 class Config():
     def __init__(self):
@@ -7,6 +8,8 @@ class Config():
         self.lastSavefile = None
         self.dateFormat = '%d.%m.%Y'
         self.loadConfig()
+        if os.path.isfile(self.lastSavefile):
+            pass
         self.loadData(self.lastSavefile)
     def loadConfig(self):
         with open('./config.ini', 'r') as file:
@@ -36,6 +39,7 @@ class Config():
                 file.write(int(seat.y1).to_bytes(2, 'big'))
                 file.write(int(seat.x2).to_bytes(2, 'big'))
                 file.write(int(seat.y2).to_bytes(2, 'big'))
+                file.write(int(seat.rot).to_bytes(2, 'big'))
             for participant in iter(self.data.participants):
                 file.write(int(len(participant.firstName)).to_bytes(1, 'big'))
                 file.write(str(participant.firstName).encode('utf-16')[2:])
@@ -61,6 +65,7 @@ class Config():
         file.closed
     def loadData(self, path):
         self.data = data.Data()
+
         with open(path, 'rb') as file:
             if(file.read(4).decode('utf-8') == 'DeSh'):
                 lenSeats = int.from_bytes(file.read(2), 'big')
@@ -71,7 +76,8 @@ class Config():
                     y1 = int.from_bytes(file.read(2), 'big')
                     x2 = int.from_bytes(file.read(2), 'big')
                     y2 = int.from_bytes(file.read(2), 'big')
-                    self.data.seats.append(data.Seat(x1, y1, x2, y2))
+                    rot = int.from_bytes(file.read(2), 'big')
+                    self.data.seats.append(data.Seat(x1, y1, x2, y2, rot))
                 for i in range(lenParticipants):
                     lenFirstName = int.from_bytes(file.read(1), 'big')
                     firstName = file.read(2*lenFirstName).decode('utf-16')

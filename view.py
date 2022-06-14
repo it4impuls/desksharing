@@ -1,7 +1,10 @@
-import tkinter as tk, tkinter.ttk as ttk, math, data, config
+import calendar
+import tkinter as tk, tkinter.ttk as ttk
+import math, data, config
 from tkinter import messagebox, font, filedialog
 from datetime import date, timedelta
 from PIL import ImageOps, ImageTk, Image
+from tkcalendar import Calendar, DateEntry
 
 rootDir = './'
 imgDir = rootDir + 'img/'
@@ -16,7 +19,7 @@ class View(tk.Tk):
 
         self.title('DeskShare')
 
-        self.showSeat = None
+        self.showSeat = None #self.config.data
         self.showParticipant = None
         self.draggedParticipant = None
         self.draggedTo = None
@@ -111,12 +114,14 @@ class View(tk.Tk):
         self.showSeat = None
         self.draw()
         self.mainframe.sidebar.refresh()
+        self.mainframe.roommap.refresh()
     def openOpenDialog(self, event):
         loadfile = filedialog.askopenfilename(filetypes=(('save files','*.sav'),('all files','*.*')))
         self.config.loadData(loadfile)
         self.showSeat = None
         self.draw()
         self.mainframe.sidebar.refresh()
+        self.mainframe.roommap.refresh()
     def openSaveAsDialog(self, event):
         savefile = filedialog.asksaveasfilename(filetypes=(('save files','*.sav'),('all files','*.*')), defaultextension='.sav')
         self.config.saveData(savefile)
@@ -178,36 +183,24 @@ class ToolBar(tk.Frame):
         self.addButton('doc_minus_icon&24.png', '<<RemoveParticipant>>')
         ttk.Separator(self, orient=tk.VERTICAL).pack(side=tk.LEFT, fill='y')
 
-        self.addButton('arrow_left_icon&24.png', '<<DecrementDate>>')
-
-        self.dateText = tk.Entry(self, width=10)
-        self.dateText.insert(0, self.master.showDate.strftime('%d.%m.%Y'))
-        self.dateText.pack(side=tk.LEFT, padx=2, pady=2)
-
-        self.addButton('arrow_right_icon&24.png', '<<IncrementDate>>')
-
-        self.dateText.bind('<Return>', self.changeDateToInput)
-        self.bind('<<DecrementDate>>', self.decrementDate)
-        self.bind('<<IncrementDate>>', self.incrementDate)
+        self.dateText =  DateEntry(self, width=10, date_pattern = 'dd.mm.yyyy')
+        self.dateText.pack(side=tk.LEFT, padx=2, pady=1)
+        self.dateText.bind('<<DateEntrySelected>>', self.applyDate)
+        self.dateText.bind('<Return>', self.applyDate)
+        self.dateText.bind('<FocusOut>', self.applyDate)
 
         self.pack(side=tk.TOP, fill=tk.X)
+        self.update()
+        
     def addButton(self, iconFilename, eventName):
         icon = ImageTk.PhotoImage(Image.open(iconDir + iconFilename))
         button = tk.Button(self, image=icon, relief=tk.FLAT, command=lambda: self.event_generate(eventName))
         button.image = icon
-        button.pack(side=tk.LEFT, padx=2, pady=2)
-    def changeDateTo(self, newDate):
-        if not isinstance(newDate, data.Error):
-            self.master.showDate = newDate
-        self.dateText.delete(0, tk.END)
-        self.dateText.insert(0, self.master.showDate.strftime('%d.%m.%Y'))
+        button.pack(side=tk.LEFT, padx=2, pady=1)
+    def applyDate(self, event):
+        self.master.showDate = self.master.config.data.stringToDate(self.dateText.get_date())
+        self.focus_set()
         self.master.draw()
-    def changeDateToInput(self, event):
-        self.changeDateTo(self.master.data.stringToDate(self.dateText.get()))
-    def decrementDate(self, event):
-        self.changeDateTo(self.master.showDate - timedelta(days=1))
-    def incrementDate(self, event):
-        self.changeDateTo(self.master.showDate + timedelta(days=1))
 class SideBar(tk.Frame):
     def __init__(self, master):
         super().__init__(master, bd=1, relief=tk.RAISED)
@@ -275,18 +268,25 @@ class Roommap(tk.Canvas):
     def __init__(self, master):
         super().__init__(master)
         self.master = master
-        self.roomImg = Image.open('./room.png')
+        self.refresh()
+        
         self.bind('<Button>', self.onClick)
         self.bind('<ButtonRelease>', self.onRelease)
+    def refresh(self):
+        self.roomImg = Image.open('./room.png')
+        for seat in self.master.master.config.data.seats:
+            self.roomImg = seat.draw(self.roomImg)
     def draw(self):
         self.update()
         relH = self.winfo_height()/self.roomImg.height
         relW = self.winfo_width()/self.roomImg.width
         self.rel = min(relW, relH)
         self.roomImgResized = ImageTk.PhotoImage(ImageOps.scale(self.roomImg, self.rel))
+        
         super().create_image(0, 0, anchor=tk.NW, image=self.roomImgResized)
-        self.font = tk.font.Font(family='Helvetica', size=int(-20*self.rel))
+        self.font = font.Font(family='Helvetica', size=int(-20*self.rel))
         for seat in iter(self.master.master.config.data.seats):
+            # seat.draw(self, self.rel)
             for assignment in iter(seat.assignments):
                 if assignment.begin <= self.master.master.showDate and assignment.end >= self.master.master.showDate:
                     self.drawParticipant(seat, assignment.participant)
@@ -302,6 +302,7 @@ class Roommap(tk.Canvas):
         super().create_text(x, yExit, text=participant.exitDate.strftime('%d.%m.%Y'), font=self.font, fill='#FF0000')
         if self.master.master.showSeat != None:
             super().create_rectangle(self.master.master.showSeat.x1*self.rel, self.master.master.showSeat.y1*self.rel, self.master.master.showSeat.x2*self.rel, self.master.master.showSeat.y2*self.rel, width=2, outline='#FF0000')
+
     def onClick(self, event):
         event.x = event.x/self.rel
         event.y = event.y/self.rel
@@ -320,42 +321,44 @@ class AddParticipantDialog(tk.Toplevel):
         self.title('Neuer Teilnehmer')
         self.grab_set()
         self.resizable(height=0, width=0)
+        _width = 30
 
         firstNameLabel = tk.Label(self, text='Vorname', justify=tk.LEFT)
-        firstNameLabel.grid(row=0, column=0, sticky=tk.W)
+        firstNameLabel.grid(row=0, column=0, sticky=tk.W, pady=1)
 
-        firstNameField = tk.Entry(self, width=30)
-        firstNameField.grid(row=0, column=1)
+        firstNameField = tk.Entry(self, width=_width)
+        firstNameField.grid(row=0, column=1, pady=1)
 
         lastNameLabel = tk.Label(self, text='Nachname', justify=tk.LEFT)
-        lastNameLabel.grid(row=1, column=0, sticky=tk.W)
+        lastNameLabel.grid(row=1, column=0, sticky=tk.W, pady=1)
 
-        lastNameField = tk.Entry(self, width=30)
-        lastNameField.grid(row=1, column=1)
+        lastNameField = tk.Entry(self, width=_width, borderwidth=1, )
+        lastNameField.grid(row=1, column=1, pady=1)
         
         entryDateLabel = tk.Label(self, text='Eintritt', justify=tk.LEFT)
-        entryDateLabel.grid(row=2, column=0, sticky=tk.W)
+        entryDateLabel.grid(row=2, column=0, sticky=tk.W, pady=1)
 
-        entryDateField = tk.Entry(self, width=30)
-        entryDateField.grid(row=2, column=1)
+        entryDateField = DateEntry(self, width=_width-3, date_pattern = 'dd.mm.yyyy')
+        entryDateField.grid(row=2, column=1, pady=1)
 
         exitDateLabel = tk.Label(self, text='Austritt', justify=tk.LEFT)
-        exitDateLabel.grid(row=3, column=0, sticky=tk.W)
+        exitDateLabel.grid(row=3, column=0, sticky=tk.W, pady=1)
 
-        exitDateField = tk.Entry(self, width=30)
-        exitDateField.grid(row=3, column=1)
+        exitDateField = DateEntry(self, width=_width-3, date_pattern = 'dd.mm.yyyy')
+        exitDateField.set_date(date(date.today().year+2, date.today().month, date.today().day+1))
+        exitDateField.grid(row=3, column=1, pady=1)
 
         noteLabel = tk.Label(self, text='Notiz')
-        noteLabel.grid(row=4, column=0, sticky=tk.W)
+        noteLabel.grid(row=4, column=0, sticky=tk.W, pady=1)
 
-        noteField = tk.Entry(self, width=30)
-        noteField.grid(row=4, column=1)
+        noteField = tk.Entry(self, width=_width)
+        noteField.grid(row=4, column=1, pady=1)
         
         addButton = tk.Button(self, text='Hinzufügen', command=lambda: self.tryAddParticipant(firstNameField.get(), lastNameField.get(), entryDateField.get(), exitDateField.get(), noteField.get()))
-        addButton.grid(row=5, column=0)
+        addButton.grid(row=5, column=0, pady=1)
 
         cancelButton = tk.Button(self, text='Abbrechen', command=self.destroy)
-        cancelButton.grid(row=5, column=1)
+        cancelButton.grid(row=5, column=1, pady=1)
     def tryAddParticipant(self, firstName, lastName, entryDate, exitDate, note=''):
         tk.Event.data = [firstName, lastName, entryDate, exitDate, note]
         self.event_generate('<<AddParticipant>>')
