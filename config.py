@@ -105,6 +105,7 @@ class Config():
             self.data = new_data
         except Exception as e:
             print("Can't load File")
+            self.data = data.ITLOFT()
         
         self.lastSavefile = path
         self.saveConfig()

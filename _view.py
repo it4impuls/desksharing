@@ -22,6 +22,7 @@ class View(tk.Tk):
         self.showSeat = None #self.config.data
         self.showParticipant = None
         self.draggedParticipant = None
+        self.draggedParticipantId = None
         self.draggedTo = None
         self.timeMode = False
         self.showDate = date.today()
@@ -64,6 +65,7 @@ class View(tk.Tk):
                 participant = seat.getParticipant(self.showDate)
                 if participant != None:
                     self.draggedParticipant = participant
+                    self.draggedParticipantId = participant.canvasID
     def onReleaseOnRoommap(self, event):
         newSeat = self.config.data.getSeat(event.data.x, event.data.y)
         if self.draggedParticipant == None:
@@ -283,28 +285,22 @@ class Roommap(tk.Canvas):
         for seat in self.master.master.config.data.seats:
             self.roomImg = seat.draw(self.roomImg)
     def draw(self):
-        # self.pack(fill='both', expand=True)
+        # self.delete("all")
         self.update()
-        self.delete("all")
-        
         relH = self.winfo_height()/self.roomImg.height
         relW = self.winfo_width()/self.roomImg.width
         self.rel = min(relW, relH)
         self.roomImgResized = ImageTk.PhotoImage(ImageOps.scale(self.roomImg, self.rel))
         
         super().create_image(0, 0, anchor=tk.NW, image=self.roomImgResized)
-        self.font = font.Font(family='Helvetica', size=max(int(20*self.rel*0.75), 5))
+        self.font = font.Font(family='Helvetica', size=int(-20*self.rel))
         for seat in iter(self.master.master.config.data.seats):
             # seat.draw(self, self.rel)
             for assignment in iter(seat.assignments):
                 if assignment.begin <= self.master.master.showDate and assignment.end >= self.master.master.showDate:
                     self.drawParticipant(seat, assignment.participant)
-        items = self.find_all()
-        pass
-    
     def draw_dragged(self, dragged_p, seats_temp):
         if isinstance(dragged_p, data.Participant):
-            self.draw()
             x_len = seats_temp[0].x2-seats_temp[0].x1
             y_len = seats_temp[0].y2-seats_temp[0].y1
             cursor = (self.master.master.winfo_pointerx(), self.master.master.winfo_pointery())
@@ -314,10 +310,9 @@ class Roommap(tk.Canvas):
             y1 = ((cursor[1]-root[0])-(y_len/2))/self.rel
             y2 = ((cursor[1]-root[0])+(y_len/2))/self.rel
             dragged_p.draw(self.rel, self.font, self, x1,x2,y1,y2)
-            # print("cursor: ", x2,y2)
-            items = self.find_all()
-            pass
-            
+            # self.moveto(dragged_p, )
+            # print("cursor: ", cursor[1] - self.winfo_rooty(), self.cget("height"))
+            # self.draw()
     def drawParticipant(self, seat, participant):
         participant.draw(self.rel, self.font, self, seat.x1, seat.x2, seat.y1, seat.y2)
         if self.master.master.showSeat != None:

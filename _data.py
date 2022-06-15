@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 from PIL import ImageOps, ImageTk, Image
 import tkinter as tk
+from tkinter import font
 
 class Data():
     def __init__(self):
@@ -119,22 +120,28 @@ class Participant():
         self.seat = seat
         self.note = note
         self.assignments = []
-        self.textIDs = []
+        self.canvas = None
+        self.canvasID = None
+        
     def doAssignmentsByTime(self, beginDate, endDate, func, exclude=False):
         for assignment in iter(self.assignments):
             func(assignment, beginDate, endDate, exclude)
-    def draw(self, rel, font, canvas:tk.Canvas, x1,x2,y1,y2):
-        x = x1*rel+(x2*rel-x1*rel)/2
-        yName = y1*rel+font.cget('size')*0.5
-        yNote = y1*rel+font.cget('size')*1.5
-        yEntry = y1*rel+font.cget('size')*2.5
-        yExit = y1*rel+font.cget('size')*3.5
+    def draw(self, rel, font:font.Font, rootCanvas:tk.Canvas, x1,x2,y1,y2):
+        # x = x1*rel+(x2*rel-x1*rel)/2
+        self.canvas = tk.Canvas(rootCanvas, width=(x2-x1)*rel, height=(y2-y1)*rel, bg='#000000')
+        # self.canvas.wm_attributes('-transparentcolor','#000000')
+        x = (x2-x1)*rel/2
+        yName = 15+font.cget('size')*0.5
+        yNote = 15+font.cget('size')*1.5
+        yEntry = 15+font.cget('size')*2.5
+        yExit = 15+font.cget('size')*3.5
 
-        self.textIDs = []
-        self.textIDs.append(canvas.create_text(x, yName, text=self.lastName, font=font, fill='#FFFFFF'))
-        self.textIDs.append(canvas.create_text(x, yNote, text=self.note, font=font, fill='#FFFFFF'))
-        self.textIDs.append(canvas.create_text(x, yEntry, text=self.entryDate.strftime('%d.%m.%Y'), font=font, fill='#00FF00'))
-        self.textIDs.append(canvas.create_text(x, yExit, text=self.exitDate.strftime('%d.%m.%Y'), font=font, fill='#FF0000'))
+        
+        self.canvas.create_text(x, yName, text=self.lastName, font=font, fill='#FFFFFF')
+        self.canvas.create_text(x, yNote, text=self.note, font=font, fill='#FFFFFF')
+        self.canvas.create_text(x, yEntry, text=self.entryDate.strftime('%d.%m.%Y'), font=font, fill='#00FF00')
+        self.canvas.create_text(x, yExit, text=self.exitDate.strftime('%d.%m.%Y'), font=font, fill='#FF0000')
+        self.canvasID = rootCanvas.create_window(x1*rel,y1*rel, window=self.canvas, anchor=tk.NW)
 
 class Seat():
     def __init__(self, x1, y1, x2, y2, rot=0):
