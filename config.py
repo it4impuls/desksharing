@@ -64,44 +64,48 @@ class Config():
                 file.write(int(assignment.end.year).to_bytes(2, 'big'))
         file.closed
     def loadData(self, path):
-        self.data = data.Data()
-
-        with open(path, 'rb') as file:
-            if(file.read(4).decode('utf-8') == 'DeSh'):
-                lenSeats = int.from_bytes(file.read(2), 'big')
-                lenParticipants = int.from_bytes(file.read(2), 'big')
-                lenAssignments = int.from_bytes(file.read(2), 'big')
-                for i in range(lenSeats):
-                    x1 = int.from_bytes(file.read(2), 'big')
-                    y1 = int.from_bytes(file.read(2), 'big')
-                    x2 = int.from_bytes(file.read(2), 'big')
-                    y2 = int.from_bytes(file.read(2), 'big')
-                    rot = int.from_bytes(file.read(2), 'big')
-                    self.data.seats.append(data.Seat(x1, y1, x2, y2, rot))
-                for i in range(lenParticipants):
-                    lenFirstName = int.from_bytes(file.read(1), 'big')
-                    firstName = file.read(2*lenFirstName).decode('utf-16')
-                    lenLastName = int.from_bytes(file.read(1), 'big')
-                    lastName = file.read(2*lenLastName).decode('utf-16')
-                    entryDay = int.from_bytes(file.read(1), 'big')
-                    entryMonth = int.from_bytes(file.read(1), 'big')
-                    entryYear = int.from_bytes(file.read(2), 'big')
-                    exitDay = int.from_bytes(file.read(1), 'big')
-                    exitMonth = int.from_bytes(file.read(1), 'big')
-                    exitYear = int.from_bytes(file.read(2), 'big')
-                    lenNote = int.from_bytes(file.read(1), 'big')
-                    note = file.read(2*lenNote).decode('utf-16')
-                    self.data.participants.append(data.Participant(firstName, lastName, date(entryYear, entryMonth, entryDay), date(exitYear, exitMonth, exitDay), note))
-                for i in range(lenAssignments):
-                    seat = self.data.seats[int.from_bytes(file.read(1), 'big')]
-                    participant = self.data.participants[int.from_bytes(file.read(1), 'big')]
-                    beginDay = int.from_bytes(file.read(1), 'big')
-                    beginMonth = int.from_bytes(file.read(1), 'big')
-                    beginYear = int.from_bytes(file.read(2), 'big')
-                    endDay = int.from_bytes(file.read(1), 'big')
-                    endMonth = int.from_bytes(file.read(1), 'big')
-                    endYear = int.from_bytes(file.read(2), 'big')
-                    self.data.assignments.append(data.Assignment(participant, seat, date(beginYear, beginMonth, beginDay), date(endYear, endMonth, endDay)))
+        new_data = data.Data()
+        try:
+            with open(path, 'rb') as file:
+                if(file.read(4).decode('utf-8') == 'DeSh'):
+                    lenSeats = int.from_bytes(file.read(2), 'big')
+                    lenParticipants = int.from_bytes(file.read(2), 'big')
+                    lenAssignments = int.from_bytes(file.read(2), 'big')
+                    for i in range(lenSeats):
+                        x1 = int.from_bytes(file.read(2), 'big')
+                        y1 = int.from_bytes(file.read(2), 'big')
+                        x2 = int.from_bytes(file.read(2), 'big')
+                        y2 = int.from_bytes(file.read(2), 'big')
+                        rot = int.from_bytes(file.read(2), 'big')
+                        new_data.seats.append(data.Seat(x1, y1, x2, y2, rot))
+                    for i in range(lenParticipants):
+                        lenFirstName = int.from_bytes(file.read(1), 'big')
+                        firstName = file.read(2*lenFirstName).decode('utf-16')
+                        lenLastName = int.from_bytes(file.read(1), 'big')
+                        lastName = file.read(2*lenLastName).decode('utf-16')
+                        entryDay = int.from_bytes(file.read(1), 'big')
+                        entryMonth = int.from_bytes(file.read(1), 'big')
+                        entryYear = int.from_bytes(file.read(2), 'big')
+                        exitDay = int.from_bytes(file.read(1), 'big')
+                        exitMonth = int.from_bytes(file.read(1), 'big')
+                        exitYear = int.from_bytes(file.read(2), 'big')
+                        lenNote = int.from_bytes(file.read(1), 'big')
+                        note = file.read(2*lenNote).decode('utf-16')
+                        new_data.participants.append(data.Participant(firstName, lastName, date(entryYear, entryMonth, entryDay), date(exitYear, exitMonth, exitDay), note))
+                    for i in range(lenAssignments):
+                        seat = new_data.seats[int.from_bytes(file.read(1), 'big')]
+                        participant = new_data.participants[int.from_bytes(file.read(1), 'big')]
+                        beginDay = int.from_bytes(file.read(1), 'big')
+                        beginMonth = int.from_bytes(file.read(1), 'big')
+                        beginYear = int.from_bytes(file.read(2), 'big')
+                        endDay = int.from_bytes(file.read(1), 'big')
+                        endMonth = int.from_bytes(file.read(1), 'big')
+                        endYear = int.from_bytes(file.read(2), 'big')
+                        new_data.assignments.append(data.Assignment(participant, seat, date(beginYear, beginMonth, beginDay), date(endYear, endMonth, endDay)))
+            self.data = new_data
+        except Exception as e:
+            print("Can't load File")
+        
         self.lastSavefile = path
         self.saveConfig()
         file.closed

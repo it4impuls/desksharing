@@ -43,6 +43,11 @@ class View(tk.Tk):
 
         self.oldWidth = self.winfo_width()
         self.oldHeight = self.winfo_height()
+        self.after(0, self.onUpdate)        # run code alongside mainloop()
+
+    def onUpdate(self):
+        self.mainframe.roommap.draw_dragged(self.draggedParticipant, self.config.data.seats)
+        self.after(1, self.onUpdate)
     def resize(self, event):
         if event.width != self.oldWidth or event.height != self.oldHeight:
             self.oldWidth = event.width
@@ -118,6 +123,7 @@ class View(tk.Tk):
     def openOpenDialog(self, event):
         loadfile = filedialog.askopenfilename(filetypes=(('save files','*.sav'),('all files','*.*')))
         self.config.loadData(loadfile)
+        
         self.showSeat = None
         self.draw()
         self.mainframe.sidebar.refresh()
@@ -277,6 +283,7 @@ class Roommap(tk.Canvas):
         for seat in self.master.master.config.data.seats:
             self.roomImg = seat.draw(self.roomImg)
     def draw(self):
+        self.pack(fill='both', expand=True)
         self.update()
         relH = self.winfo_height()/self.roomImg.height
         relW = self.winfo_width()/self.roomImg.width
@@ -290,16 +297,21 @@ class Roommap(tk.Canvas):
             for assignment in iter(seat.assignments):
                 if assignment.begin <= self.master.master.showDate and assignment.end >= self.master.master.showDate:
                     self.drawParticipant(seat, assignment.participant)
+    def draw_dragged(self, dragged_p, seats_temp):
+        if isinstance(dragged_p, data.Participant):
+            x_len = seats_temp[0].x2-seats_temp[0].x1
+            y_len = seats_temp[0].y2-seats_temp[0].y1
+            cursor = (self.master.master.winfo_pointerx(), self.master.master.winfo_pointery())
+            root = (self.master.master.winfo_rootx(), self.master.master.winfo_rooty())
+            x1 = ((cursor[0]-root[0])-(x_len/2))/self.rel
+            x2 = ((cursor[0]-root[0])+(x_len/2))/self.rel
+            y1 = ((cursor[1]-root[0])-(y_len/2))/self.rel
+            y2 = ((cursor[1]-root[0])+(y_len/2))/self.rel
+            dragged_p.draw(self.rel, self.font, self, x1,x2,y1,y2)
+            # print("cursor: ", x2,y2)
+            self.draw()
     def drawParticipant(self, seat, participant):
-        x = seat.x1*self.rel+(seat.x2*self.rel-seat.x1*self.rel)/2
-        yName = seat.y1*self.rel-self.font.cget('size')*0.5
-        yNote = seat.y1*self.rel-self.font.cget('size')*1.5
-        yEntry = seat.y1*self.rel-self.font.cget('size')*2.5
-        yExit = seat.y1*self.rel-self.font.cget('size')*3.5
-        super().create_text(x, yName, text=participant.lastName, font=self.font, fill='#FFFFFF')
-        super().create_text(x, yNote, text=participant.note, font=self.font, fill='#FFFFFF')
-        super().create_text(x, yEntry, text=participant.entryDate.strftime('%d.%m.%Y'), font=self.font, fill='#00FF00')
-        super().create_text(x, yExit, text=participant.exitDate.strftime('%d.%m.%Y'), font=self.font, fill='#FF0000')
+        participant.draw(self.rel, self.font, self, seat.x1, seat.x2, seat.y1, seat.y2)
         if self.master.master.showSeat != None:
             super().create_rectangle(self.master.master.showSeat.x1*self.rel, self.master.master.showSeat.y1*self.rel, self.master.master.showSeat.x2*self.rel, self.master.master.showSeat.y2*self.rel, width=2, outline='#FF0000')
 

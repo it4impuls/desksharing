@@ -122,6 +122,18 @@ class Participant():
     def doAssignmentsByTime(self, beginDate, endDate, func, exclude=False):
         for assignment in iter(self.assignments):
             func(assignment, beginDate, endDate, exclude)
+    def draw(self, rel, font, canvas, x1,x2,y1,y2):
+        x = x1*rel+(x2*rel-x1*rel)/2
+        yName = y1*rel-font.cget('size')*0.5
+        yNote = y1*rel-font.cget('size')*1.5
+        yEntry = y1*rel-font.cget('size')*2.5
+        yExit = y1*rel-font.cget('size')*3.5
+
+
+        canvas.create_text(x, yName, text=self.lastName, font=font, fill='#FFFFFF')
+        canvas.create_text(x, yNote, text=self.note, font=font, fill='#FFFFFF')
+        canvas.create_text(x, yEntry, text=self.entryDate.strftime('%d.%m.%Y'), font=font, fill='#00FF00')
+        canvas.create_text(x, yExit, text=self.exitDate.strftime('%d.%m.%Y'), font=font, fill='#FF0000')
 
 class Seat():
     def __init__(self, x1, y1, x2, y2, rot=0):
