@@ -131,10 +131,12 @@ class Participant():
         yExit = y1*rel+font.cget('size')*3.5
 
         self.textIDs = []
-        self.textIDs.append(canvas.create_text(x, yName, text=self.lastName, font=font, fill='#FFFFFF'))
-        self.textIDs.append(canvas.create_text(x, yNote, text=self.note, font=font, fill='#FFFFFF'))
+        self.textIDs.append(canvas.create_text(x, yName, text=self.lastName, font=font, fill='#EEEEEE'))
+        self.textIDs.append(canvas.create_text(x, yNote, text=self.note, font=font, fill='#EEEEEE'))
         self.textIDs.append(canvas.create_text(x, yEntry, text=self.entryDate.strftime('%d.%m.%Y'), font=font, fill='#00FF00'))
         self.textIDs.append(canvas.create_text(x, yExit, text=self.exitDate.strftime('%d.%m.%Y'), font=font, fill='#FF0000'))
+        
+        
 
 class Seat():
     def __init__(self, x1, y1, x2, y2, rot=0):
@@ -144,7 +146,7 @@ class Seat():
         self.y2 = y2
         self.assignments = []
         self.rot = rot
-        self.img = Image.open('./img/Desk.png')
+        self.img = Image.open('./img/Desk.png').convert()
 
         self.offset_x = 0
         self.offset_x = 0
@@ -175,11 +177,10 @@ class Seat():
     def doAssignmentsByTime(self, beginDate, endDate, func):
         for assignment in iter(self.assignments):
             func(assignment, beginDate, endDate)
-    def draw(self, roomImg:Image):
-        
-        img = self.img.rotate(self.rot*90,resample=Image.BILINEAR)
-        roomImg.alpha_composite(img, (self.x1+self.offset_x, self.y1+self.offset_y))
-        return roomImg
+    def draw(self, canvas:tk.Canvas, rel):
+        img = self.img.rotate(self.rot*90,resample=Image.NEAREST)
+        self.image_resized=ImageTk.PhotoImage(ImageOps.scale(img, rel))
+        canvas.create_image((self.x1+self.offset_x)*rel,(self.y1+self.offset_y)*rel, image=self.image_resized, anchor=tk.NW)
 
 class Assignment():
     def __init__(self, participant, seat, begin, end):

@@ -1,4 +1,4 @@
-import calendar
+# import calendar
 import tkinter as tk, tkinter.ttk as ttk
 import math, data, config
 from tkinter import messagebox, font, filedialog
@@ -18,6 +18,9 @@ class View(tk.Tk):
         self.config = config.Config()
 
         self.title('DeskShare')
+        # self.style = ttk.Style(self)
+        # self.style.theme_use("clam")
+        #('winnative', 'clam', 'alt', 'default', 'classic', 'vista', 'xpnative')
 
         self.showSeat = None #self.config.data
         self.showParticipant = None
@@ -64,6 +67,9 @@ class View(tk.Tk):
                 participant = seat.getParticipant(self.showDate)
                 if participant != None:
                     self.draggedParticipant = participant
+                    # for iid in participant.textIDs:
+                    #     self.mainframe.roommap.tag_raise(iid)
+                    
     def onReleaseOnRoommap(self, event):
         newSeat = self.config.data.getSeat(event.data.x, event.data.y)
         if self.draggedParticipant == None:
@@ -113,7 +119,7 @@ class View(tk.Tk):
             self.closeMoveParticipantDialog()
         self.draggedParticipant = None
         self.draggedTo = None
-        self.draw()
+        # self.draw()
     def newFile(self, event):
         self.config.data = data.ITLOFT()
         self.showSeat = None
@@ -247,10 +253,8 @@ class SideBar(tk.Frame):
     def onClick(self, event):
         if self.table.identify_row(event.y) != '':
             clickedOn = int(self.table.identify_row(event.y))
-            if self.master.showSeat == None:
-                self.master.draggedParticipant = self.master.config.data.participants[clickedOn]
-            else:
-                self.master.draggedParticipant = self.master.showSeat.assignments[clickedOn].participant
+            self.master.draggedParticipant = self.master.config.data.participants[clickedOn]
+            # self.master.mainframe.roommap.draw()
         else:
             self.master.draggedParticipant = None
     def onRelease(self, event):
@@ -274,49 +278,51 @@ class Roommap(tk.Canvas):
     def __init__(self, master):
         super().__init__(master)
         self.master = master
-        self.refresh()
+        self.roomImg = Image.open('./room.png').convert()
+        self.rel = 1
         
         self.bind('<Button>', self.onClick)
         self.bind('<ButtonRelease>', self.onRelease)
-    def refresh(self):
-        self.roomImg = Image.open('./room.png')
-        for seat in self.master.master.config.data.seats:
-            self.roomImg = seat.draw(self.roomImg)
+
     def draw(self):
-        # self.pack(fill='both', expand=True)
         self.update()
         self.delete("all")
         
         relH = self.winfo_height()/self.roomImg.height
         relW = self.winfo_width()/self.roomImg.width
-        self.rel = min(relW, relH)
+        self.rel = max(min(relW, relH), 0.1)
         self.roomImgResized = ImageTk.PhotoImage(ImageOps.scale(self.roomImg, self.rel))
+        self.create_image(0, 0, anchor=tk.NW, image=self.roomImgResized)
         
-        super().create_image(0, 0, anchor=tk.NW, image=self.roomImgResized)
-        self.font = font.Font(family='Helvetica', size=max(int(20*self.rel*0.75), 5))
+        # t = self.create_image(0,0,image=testimg)
+        self.font = font.Font(family='Helvetica', size=int(max(20*self.rel*0.75, 6)))
+        for seat in self.master.master.config.data.seats:
+            seat.draw(self, self.rel)           # seperate, so that all seats are drawn before the nametags, so nametags are layered above.
         for seat in iter(self.master.master.config.data.seats):
-            # seat.draw(self, self.rel)
             for assignment in iter(seat.assignments):
                 if assignment.begin <= self.master.master.showDate and assignment.end >= self.master.master.showDate:
                     self.drawParticipant(seat, assignment.participant)
+    
         items = self.find_all()
         pass
-    
+
     def draw_dragged(self, dragged_p, seats_temp):
         if isinstance(dragged_p, data.Participant):
-            self.draw()
-            x_len = seats_temp[0].x2-seats_temp[0].x1
-            y_len = seats_temp[0].y2-seats_temp[0].y1
-            cursor = (self.master.master.winfo_pointerx(), self.master.master.winfo_pointery())
-            root = (self.master.master.winfo_rootx(), self.master.master.winfo_rooty())
-            x1 = ((cursor[0]-root[0])-(x_len/2))/self.rel
-            x2 = ((cursor[0]-root[0])+(x_len/2))/self.rel
-            y1 = ((cursor[1]-root[0])-(y_len/2))/self.rel
-            y2 = ((cursor[1]-root[0])+(y_len/2))/self.rel
-            dragged_p.draw(self.rel, self.font, self, x1,x2,y1,y2)
-            # print("cursor: ", x2,y2)
-            items = self.find_all()
-            pass
+            cursorPos = (   self.master.master.winfo_pointerx()-self.master.master.winfo_rootx(), 
+                            self.master.master.winfo_pointery()-self.master.master.winfo_rooty())
+            if len(dragged_p.textIDs) > 0:
+                root = self.coords(dragged_p.textIDs[0])
+                reMove = (cursorPos[0]-root[0], cursorPos[1]-root[1])
+                for txtID in dragged_p.textIDs:
+                    self.move(txtID, reMove[0], reMove[1]-40)
+            else:
+                x_len = seats_temp[0].x2-seats_temp[0].x1
+                y_len = seats_temp[0].y2-seats_temp[0].y1
+                x1 = (cursorPos[0]-(x_len/2))/self.rel
+                x2 = (cursorPos[0]+(x_len/2))/self.rel
+                y1 = (cursorPos[1]-(y_len/2))/self.rel
+                y2 = (cursorPos[1]+(y_len/2))/self.rel
+                dragged_p.draw(self.rel, self.font, self, x1,x2,y1,y2)
             
     def drawParticipant(self, seat, participant):
         participant.draw(self.rel, self.font, self, seat.x1, seat.x2, seat.y1, seat.y2)
