@@ -421,39 +421,44 @@ class EditParticipantDialog(tk.Toplevel):
         self.title('Teilnehmer bearbeiten')
         self.grab_set()
         self.resizable(height=0, width=0)
+        _width = 30
 
         firstNameLabel = tk.Label(self, text='Vorname', justify=tk.LEFT)
         firstNameLabel.grid(row=0, column=0, sticky=tk.W)
 
-        firstNameField = tk.Entry(self, width=30)
+        firstNameField = tk.Entry(self, width=_width)
         firstNameField.grid(row=0, column=1)
         firstNameField.insert('end', participant.firstName)
 
         lastNameLabel = tk.Label(self, text='Nachname', justify=tk.LEFT)
         lastNameLabel.grid(row=1, column=0, sticky=tk.W)
 
-        lastNameField = tk.Entry(self, width=30)
+        lastNameField = tk.Entry(self, width=_width)
         lastNameField.grid(row=1, column=1)
         lastNameField.insert('end', participant.lastName)
         
         entryDateLabel = tk.Label(self, text='Eintritt', justify=tk.LEFT)
         entryDateLabel.grid(row=2, column=0, sticky=tk.W)
 
-        entryDateField = tk.Entry(self, width=30)
+        entryDateField = DateEntry(self, width=_width-3, date_pattern = 'dd.mm.yyyy')
+        entryDateField.set_date(participant.entryDate)
+        # entryDateField = tk.Entry(self, width=30)
         entryDateField.grid(row=2, column=1)
-        entryDateField.insert('end', participant.entryDate.strftime('%d.%m.%Y'))
+        # entryDateField.insert('end', participant.entryDate.strftime('%d.%m.%Y'))
 
         exitDateLabel = tk.Label(self, text='Austritt', justify=tk.LEFT)
         exitDateLabel.grid(row=3, column=0, sticky=tk.W)
 
-        exitDateField = tk.Entry(self, width=30)
+        exitDateField = DateEntry(self, width=_width-3, date_pattern = 'dd.mm.yyyy')
+        exitDateField.set_date(participant.exitDate)
+        # exitDateField = tk.Entry(self, width=30)
         exitDateField.grid(row=3, column=1)
-        exitDateField.insert('end', participant.exitDate.strftime('%d.%m.%Y'))
+        # exitDateField.insert('end', participant.exitDate.strftime('%d.%m.%Y'))
 
         noteLabel = tk.Label(self, text='Notiz')
         noteLabel.grid(row=4, column=0, sticky=tk.W)
 
-        noteField = tk.Entry(self, width=30)
+        noteField = tk.Entry(self, width=_width)
         noteField.grid(row=4, column=1)
         noteField.insert('end', participant.note)
         
@@ -491,8 +496,8 @@ class MoveParticipantDialog(tk.Toplevel):
         self.beginField['state'] = tk.DISABLED
 
         # self.endField = tk.Entry(self, width=10)
-        self.beginField = DateEntry(self, width=10, date_pattern = 'dd.mm.yyyy')
-        self.beginField.set_date(participant.exitDate)
+        self.endField = DateEntry(self, width=10, date_pattern = 'dd.mm.yyyy')
+        self.endField.set_date(participant.exitDate)
         self.endField.grid(row=3, column=1)
         # self.endField.insert(0, participant.exitDate.strftime('%d.%m.%Y'))
         self.endField['state'] = tk.DISABLED
