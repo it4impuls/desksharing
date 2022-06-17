@@ -442,18 +442,14 @@ class EditParticipantDialog(tk.Toplevel):
 
         entryDateField = DateEntry(self, width=_width-3, date_pattern = 'dd.mm.yyyy')
         entryDateField.set_date(participant.entryDate)
-        # entryDateField = tk.Entry(self, width=30)
         entryDateField.grid(row=2, column=1)
-        # entryDateField.insert('end', participant.entryDate.strftime('%d.%m.%Y'))
 
         exitDateLabel = tk.Label(self, text='Austritt', justify=tk.LEFT)
         exitDateLabel.grid(row=3, column=0, sticky=tk.W)
 
         exitDateField = DateEntry(self, width=_width-3, date_pattern = 'dd.mm.yyyy')
         exitDateField.set_date(participant.exitDate)
-        # exitDateField = tk.Entry(self, width=30)
         exitDateField.grid(row=3, column=1)
-        # exitDateField.insert('end', participant.exitDate.strftime('%d.%m.%Y'))
 
         noteLabel = tk.Label(self, text='Notiz')
         noteLabel.grid(row=4, column=0, sticky=tk.W)
@@ -488,18 +484,14 @@ class MoveParticipantDialog(tk.Toplevel):
         self.endText = tk.Label(self, justify=tk.LEFT, text='bis', state=tk.DISABLED)
         self.endText.grid(row=2, column=1)
 
-        # self.beginField = tk.Entry(self, width=10)
         self.beginField = DateEntry(self, width=10, date_pattern = 'dd.mm.yyyy')
         self.beginField.set_date(participant.entryDate)
         self.beginField.grid(row=3, column=0)
-        # self.beginField.insert(0, participant.entryDate.strftime('%d.%m.%Y'))
         self.beginField['state'] = tk.DISABLED
 
-        # self.endField = tk.Entry(self, width=10)
         self.endField = DateEntry(self, width=10, date_pattern = 'dd.mm.yyyy')
         self.endField.set_date(participant.exitDate)
         self.endField.grid(row=3, column=1)
-        # self.endField.insert(0, participant.exitDate.strftime('%d.%m.%Y'))
         self.endField['state'] = tk.DISABLED
 
         okButton = tk.Button(self, text='OK', command=self.tryMoveParticipant)
