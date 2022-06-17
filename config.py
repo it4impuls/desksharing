@@ -109,7 +109,7 @@ class Config():
         
         self.lastSavefile = path
         self.saveConfig()
-        file.closed
+        # file.closed
 
 
 if __name__ == '__main__':

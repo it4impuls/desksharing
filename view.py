@@ -18,11 +18,8 @@ class View(tk.Tk):
         self.config = config.Config()
 
         self.title('DeskShare')
-        # self.style = ttk.Style(self)
-        # self.style.theme_use("clam")
-        #('winnative', 'clam', 'alt', 'default', 'classic', 'vista', 'xpnative')
 
-        self.showSeat = None #self.config.data
+        self.showSeat = None
         self.showParticipant = None
         self.draggedParticipant = None
         self.draggedTo = None
@@ -35,21 +32,23 @@ class View(tk.Tk):
         self.bind_all('<<AddParticipant>>', self.addParticipant)
         self.bind('<<OpenMoveParticipantDialog>>', self.openMoveParticipantDialog)
         self.bind('<<ClickedOnRoommap>>', self.onClickOnRoommap)
-        self.bind('<<ReleasedOnRoomMap>>', self.onReleaseOnRoommap)
+        self.bind('<<ReleasedFromRoomMap>>', self.onReleasedFromRoomMap)
         self.bind_all('<<MoveParticipant>>', self.moveParticipant)
         self.bind('<<OpenSaveAsDialog>>', self.openSaveAsDialog)
         self.bind('<<OpenOpenDialog>>', self.openOpenDialog)
         self.bind('<<NewFile>>', self.newFile)
         self.bind('<<OpenEditParticipantDialog>>', self.openEditParticipantDialog)
         self.bind_all('<<EditParticipant>>', self.editParticipant)
-        self.bind('<<RemoveParticipant>>', self.removeParticpant)
+        self.bind('<<RemoveParticipant>>', self.removeParticpantFromList)
+        self.bind('<<ReleasedFromSidebar>>', self.onReleasedFromSidebar)
+        self.bind_all('<Escape>', self.onEsc)
 
         self.oldWidth = self.winfo_width()
         self.oldHeight = self.winfo_height()
         self.after(0, self.onUpdate)        # run code alongside mainloop()
 
     def onUpdate(self):
-        self.mainframe.roommap.draw_dragged(self.draggedParticipant, self.config.data.seats)
+        self.mainframe.roommap.update_dragged(self.draggedParticipant, self.config.data.seats)
         self.after(1, self.onUpdate)
     def resize(self, event):
         if event.width != self.oldWidth or event.height != self.oldHeight:
@@ -61,40 +60,51 @@ class View(tk.Tk):
         self.mainframe.roommap.pack(fill='both', expand=True)
         self.mainframe.pack(fill='both', expand=True)
     def onClickOnRoommap(self, event):
-        if event.data.num in [1, 3]:
+        if event.data.num in [1, 3]:    #leftclick or rightclick
             seat = self.config.data.getSeat(event.data.x, event.data.y)
             if seat != None:
                 participant = seat.getParticipant(self.showDate)
                 if participant != None:
                     self.draggedParticipant = participant
-                    # for iid in participant.textIDs:
-                    #     self.mainframe.roommap.tag_raise(iid)
-                    
-    def onReleaseOnRoommap(self, event):
+    def onReleasedFromRoomMap(self, event):
         newSeat = self.config.data.getSeat(event.data.x, event.data.y)
         if self.draggedParticipant == None:
             self.showSeat = newSeat
         else:
             if newSeat == None:
+                # remove participent from desk if dragged over sidebar.
+                x,y = self.winfo_pointerxy()
+                if self.mainframe.winfo_containing(x,y) == self.mainframe.sidebar.table:
+                    self.removeParticpantFromSeat(self.draggedParticipant)
                 self.showSeat = None
                 self.draggedParticipant = None
             else:
                 self.draggedTo = newSeat
+                # assign to new seat
                 if newSeat.getParticipant(self.showDate) == self.draggedParticipant:
-                    if event.data.num == 1:
+                    if event.data.num == 1:     #leftclick
                         self.showSeat = newSeat
                         self.draggedParticipant = None
-                    elif event.data.num == 3:
+                    elif event.data.num == 3:   #rightclick
                         #Kontextmenü
                         pass
                 else:
-                    if event.data.num == 1:
+                    if event.data.num == 1:     #leftclick
                         tk.Event.data = [1, self.draggedParticipant.entryDate, self.draggedParticipant.exitDate, False]
                         self.event_generate('<<MoveParticipant>>')
-                    elif event.data.num == 3:
+                    elif event.data.num == 3:   #rightclick
                         self.draggedTo = newSeat
                         self.event_generate('<<OpenMoveParticipantDialog>>')
         self.draw()
+    def onReleasedFromSidebar(self,event):
+        if isinstance(self.draggedParticipant, data.Participant):
+            self.showSeat = None
+            self.draggedParticipant = None
+    def onEsc(self, event):
+        if isinstance(self.draggedParticipant, data.Participant):
+            self.draggedParticipant = None
+            self.mainframe.roommap.draw()
+
     def openAddParticipantDialog(self, event):
         self.addParticipantDialog = AddParticipantDialog()
     def closeAddParticipantDialog(self):
@@ -119,7 +129,7 @@ class View(tk.Tk):
             self.closeMoveParticipantDialog()
         self.draggedParticipant = None
         self.draggedTo = None
-        # self.draw()
+        self.draw()
     def newFile(self, event):
         self.config.data = data.ITLOFT()
         self.showSeat = None
@@ -148,11 +158,21 @@ class View(tk.Tk):
             self.mainframe.sidebar.refresh()
     def closeEditParticipantDialog(self):
         self.editParticipantDialog.destroy()
-    def removeParticpant(self, event):
-        self.config.data.removeParticipant(int(self.mainframe.sidebar.table.selection()[0]))
+    def removeParticpantFromList(self, event):
+        if isinstance(self.showSeat, data.Seat):
+            self.removeParticpantFromSeat(self.showSeat.getParticipant(self.showDate))
+        elif True:
+            self.config.data.removeParticipant(int(self.mainframe.sidebar.table.selection()[0]))
         self.draw()
         self.mainframe.sidebar.refresh()
-
+    def removeParticpantFromSeat(self, participent):
+        if isinstance(participent, data.Participant):
+            participent.doAssignmentsByTime(participent.entryDate,participent.entryDate,self.config.data.removeAssignment, True)
+            for iid in participent.textIDs:
+                self.mainframe.roommap.delete(iid)
+            participent.textIDs = []
+    def asignParticipentToSeat(self, participent):
+        pass
 
 class MainFrame(tk.Frame):
     def __init__(self, master):
@@ -229,7 +249,8 @@ class SideBar(tk.Frame):
         self.table.heading('EndDate', text='Austrittsdatum', anchor=tk.W)
 
         self.table.bind('<Button>', self.onClick)
-        self.table.bind('<ButtonRelease>', self.onRelease)
+        # Triggers everywhere if pressed on sidebar, doesnt trigger if pressed anywhere else for some reason
+        self.table.bind('<ButtonRelease>', self.onRelease) 
         self.table.bind('<Double-Button-1>', self.onDoubleClick)
 
         self.firstNameFields = []
@@ -244,10 +265,10 @@ class SideBar(tk.Frame):
     def refresh(self):
         for row in self.table.get_children():
             self.table.delete(row)
-        if self.master.showSeat == None:
-            for i in range(len(self.master.config.data.participants)):
-                self.table.insert('', 'end', i, values=((self.master.config.data.participants[i].lastName + ', ' + self.master.config.data.participants[i].firstName), self.master.config.data.participants[i].entryDate.strftime('%d.%m.%Y'), self.master.config.data.participants[i].exitDate.strftime('%d.%m.%Y')))
-        else:
+        
+        for i in range(len(self.master.config.data.participants)):
+            self.table.insert('', 'end', i, values=((self.master.config.data.participants[i].lastName + ', ' + self.master.config.data.participants[i].firstName), self.master.config.data.participants[i].entryDate.strftime('%d.%m.%Y'), self.master.config.data.participants[i].exitDate.strftime('%d.%m.%Y')))
+        if self.master.showSeat != None:
             for i in range(len(self.master.showSeat.assignments)):
                 self.table.insert('', 'end', i, values=((self.master.showSeat.assignments[i].participant.lastName + ', ' + self.master.showSeat.assignments[i].participant.firstName), self.master.showSeat.assignments[i].begin.strftime('%d.%m.%Y'), self.master.showSeat.assignments[i].end.strftime('%d.%m.%Y')))
     def onClick(self, event):
@@ -261,7 +282,7 @@ class SideBar(tk.Frame):
         event.x = (event.x_root-self.master.mainframe.roommap.winfo_rootx())/self.master.mainframe.roommap.rel
         event.y = (event.y_root-self.master.mainframe.roommap.winfo_rooty())/self.master.mainframe.roommap.rel
         tk.Event.data = event
-        self.event_generate('<<ReleasedOnRoomMap>>')
+        self.event_generate('<<ReleasedFromSidebar>>')
     def onDoubleClick(self, event):
         if self.table.identify_row(event.y) != '':
             clickedOn = int(self.table.identify_row(event.y))
@@ -282,7 +303,7 @@ class Roommap(tk.Canvas):
         self.rel = 1
         
         self.bind('<Button>', self.onClick)
-        self.bind('<ButtonRelease>', self.onRelease)
+        self.bind('<ButtonRelease>', self.onRelease)    # Triggers everywhere as if in master
 
     def draw(self):
         self.update()
@@ -306,12 +327,17 @@ class Roommap(tk.Canvas):
         items = self.find_all()
         pass
 
-    def draw_dragged(self, dragged_p, seats_temp):
+    def refresh(self):
+        self.draw()
+
+    def update_dragged(self, dragged_p, seats_temp):
         if isinstance(dragged_p, data.Participant):
             cursorPos = (   self.master.master.winfo_pointerx()-self.master.master.winfo_rootx(), 
                             self.master.master.winfo_pointery()-self.master.master.winfo_rooty())
             if len(dragged_p.textIDs) > 0:
                 root = self.coords(dragged_p.textIDs[0])
+                if len(root)==0:
+                    root=cursorPos
                 reMove = (cursorPos[0]-root[0], cursorPos[1]-root[1])
                 for txtID in dragged_p.textIDs:
                     self.move(txtID, reMove[0], reMove[1]-40)
@@ -338,7 +364,7 @@ class Roommap(tk.Canvas):
         event.x = event.x/self.rel
         event.y = event.y/self.rel
         tk.Event.data = event
-        self.event_generate('<<ReleasedOnRoomMap>>')
+        self.event_generate('<<ReleasedFromRoomMap>>')
 
 
 class AddParticipantDialog(tk.Toplevel):
@@ -457,14 +483,18 @@ class MoveParticipantDialog(tk.Toplevel):
         self.endText = tk.Label(self, justify=tk.LEFT, text='bis', state=tk.DISABLED)
         self.endText.grid(row=2, column=1)
 
-        self.beginField = tk.Entry(self, width=10)
+        # self.beginField = tk.Entry(self, width=10)
+        self.beginField = DateEntry(self, width=10, date_pattern = 'dd.mm.yyyy')
+        self.beginField.set_date(participant.entryDate)
         self.beginField.grid(row=3, column=0)
-        self.beginField.insert(0, participant.entryDate.strftime('%d.%m.%Y'))
+        # self.beginField.insert(0, participant.entryDate.strftime('%d.%m.%Y'))
         self.beginField['state'] = tk.DISABLED
 
-        self.endField = tk.Entry(self, width=10)
+        # self.endField = tk.Entry(self, width=10)
+        self.beginField = DateEntry(self, width=10, date_pattern = 'dd.mm.yyyy')
+        self.beginField.set_date(participant.exitDate)
         self.endField.grid(row=3, column=1)
-        self.endField.insert(0, participant.exitDate.strftime('%d.%m.%Y'))
+        # self.endField.insert(0, participant.exitDate.strftime('%d.%m.%Y'))
         self.endField['state'] = tk.DISABLED
 
         okButton = tk.Button(self, text='OK', command=self.tryMoveParticipant)

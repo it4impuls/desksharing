@@ -65,12 +65,16 @@ class Data():
         if isinstance(beginDate, Error):
             return Error('Anfangsdatum: ') + beginDate
         elif beginDate < participant.entryDate:
-            return Error('Zeitraum kann nicht vor Eintrittsdatum des Teilnehmers sein.')
+            beginDate = participant.entryDate
+            print("Zeitraum vor Eintrittsdatum nicht gültig, setze Zeitraumsanfang zu Eintrittsdatum des Teilnehmers")
+            # return Error('Zeitraum kann nicht vor Eintrittsdatum des Teilnehmers sein.')
         endDate = self.stringToDate(endDate)
         if isinstance(endDate, Error):
             return Error('Enddatum: ') + endDate
         elif endDate > participant.exitDate:
-            return Error('Zeitraum kann nicht nach Austrittsdatum des Teilnehmers sein.')
+            endDate = participant.exitDate
+            print("Zeitraum nach Eintrittsdatum nicht gültig, setze Zeitraumsende zu Austrittsdatum des Teilnehmers")
+            # return Error('Zeitraum kann nicht nach Austrittsdatum des Teilnehmers sein.')
         if len(newSeat.getAssignmentsByTime(beginDate, endDate)) > 0:
             return Error('Es können nicht mehrere Teilnehmer im selben Zeitraum an einem Platz sitzen.')
 
@@ -102,13 +106,29 @@ class Data():
                 assignment.begin = endDate + timedelta(days=1)
             elif not collisionBegin and collisionEnd:
                 assignment.end = beginDate - timedelta(days=1)
-    def removeParticipant(self, number):
-        for assignment in self.participants[number].assignments:
-            assignment.seat.assignments.remove(assignment)
-            self.assignments.remove(assignment)
+    def removeParticipant(self, number=None, participant = None):
+        if number!=None:
+            for assignment in self.participants[number].assignments:
+                assignment.seat.assignments.remove(assignment)
+                self.assignments.remove(assignment)
         self.participants.remove(self.participants[number])
         
-            
+    def removeParticipantFromSeat(self, participant, newSeat, beginDate, endDate):
+        beginDate = self.stringToDate(beginDate)
+        if isinstance(beginDate, Error):
+            return Error('Anfangsdatum: ') + beginDate
+        elif beginDate < participant.entryDate:
+            return Error('Zeitraum kann nicht vor Eintrittsdatum des Teilnehmers sein.')
+        endDate = self.stringToDate(endDate)
+        if isinstance(endDate, Error):
+            return Error('Enddatum: ') + endDate
+        elif endDate > participant.exitDate:
+            return Error('Zeitraum kann nicht nach Austrittsdatum des Teilnehmers sein.')
+        if len(newSeat.getAssignmentsByTime(beginDate, endDate)) > 0:
+            return Error('Es können nicht mehrere Teilnehmer im selben Zeitraum an einem Platz sitzen.')
+
+        participant.doAssignmentsByTime(beginDate, endDate, self.removeAssignment)
+        self.assignments.append(Assignment(participant, newSeat, beginDate, endDate))
 
 class Participant():
     def __init__(self, firstName, lastName, entryDate, exitDate, seat=None, note=''):
