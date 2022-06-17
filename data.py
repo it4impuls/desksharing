@@ -79,6 +79,7 @@ class Data():
             return Error('Es können nicht mehrere Teilnehmer im selben Zeitraum an einem Platz sitzen.')
 
         participant.doAssignmentsByTime(beginDate, endDate, self.removeAssignment)
+        participant.seat = newSeat
         self.assignments.append(Assignment(participant, newSeat, beginDate, endDate))
     def getSeat(self, x, y):
         for seat in iter(self.seats):
@@ -167,21 +168,22 @@ class Seat():
         self.assignments = []
         self.rot = rot
         self.img = Image.open('./img/Desk.png').convert()
+        self.img_id = None
 
-        self.offset_x = 0
-        self.offset_x = 0
-        self.offset_y = 0
+        # self.offset_x = 0
+        # self.offset_x = 0
+        # self.offset_y = 0
 
-        if self.rot == 0:
-            pass
-        elif self.rot == 1:
-            self.offset_y = 1
-            self.offset_x = -1
-        elif self.rot == 3:
-            self.offset_x = -40
-            self.offset_y = 1
-        elif self.rot == 2:
-            self.offset_y = -37
+        # if self.rot == 0:
+        #     pass
+        # elif self.rot == 1:
+        #     self.offset_y = 1
+        #     self.offset_x = -1
+        # elif self.rot == 3:
+        #     self.offset_x = -40
+        #     self.offset_y = 1
+        # elif self.rot == 2:
+        #     self.offset_y = -37
 
     def getParticipant(self, date):
         for assignment in iter(self.assignments):
@@ -200,7 +202,9 @@ class Seat():
     def draw(self, canvas:tk.Canvas, rel):
         img = self.img.rotate(self.rot*90,resample=Image.NEAREST)
         self.image_resized=ImageTk.PhotoImage(ImageOps.scale(img, rel))
-        canvas.create_image((self.x1+self.offset_x)*rel,(self.y1+self.offset_y)*rel, image=self.image_resized, anchor=tk.NW)
+        self.img_id = canvas.create_image((self.x1)*rel,(self.y1)*rel, image=self.image_resized, anchor=tk.NW)
+    # def move(self, x:int, y:int):
+    #     pass
 
 class Assignment():
     def __init__(self, participant, seat, begin, end):
