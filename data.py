@@ -10,6 +10,7 @@ class Data():
         self.seats = []
         self.assignments = []
         self.roomFile = ''
+        self.scale = 1
     def stringToDate(self, string):
         string = str(string)
         if string.count('.') == 2:
@@ -149,11 +150,11 @@ class Participant():
             func(assignment, beginDate, endDate, exclude)
     def draw(self, rel, font, canvas:tk.Canvas, x1,x2,y1,y2):
         x = x1*rel+(x2*rel-x1*rel)/2
-        # height = ((y2-y1)/2 - (font.cget('size')*2))*rel
-        yName = y1*rel+font.cget('size')*0.5# + height
-        yNote = y1*rel+font.cget('size')*1.5# + height
-        yEntry = y1*rel+font.cget('size')*2.5# + height
-        yExit = y1*rel+font.cget('size')*3.5# + height
+        height =  ((y2-y1)/2)*rel# - (font.cget('size')*3)*rel
+        yName = y1*rel+font.cget('size')*0.5 + height
+        yNote = y1*rel+font.cget('size')*1.5 + height
+        yEntry = y1*rel+font.cget('size')*2.5 + height
+        yExit = y1*rel+font.cget('size')*3.5 + height
 
         self.textIDs = []
         self.textIDs.append(canvas.create_text(x, yName, text=self.lastName, font=font, fill='#EEEEEE'))
@@ -188,10 +189,11 @@ class Seat():
     def doAssignmentsByTime(self, beginDate, endDate, func):
         for assignment in iter(self.assignments):
             func(assignment, beginDate, endDate)
-    def draw(self, canvas:tk.Canvas, rel):
+    def draw(self, canvas:tk.Canvas, scale = 1):
         img = self.img.rotate(self.rot*90,resample=Image.NEAREST)
-        self.image_resized=ImageTk.PhotoImage(ImageOps.scale(img, rel))
-        self.img_id = canvas.create_image((self.x1)*rel,(self.y1)*rel, image=self.image_resized, anchor=tk.NW)
+        self.image_resized=ImageTk.PhotoImage(ImageOps.scale(img, canvas.rel * scale))
+        self.img_id = canvas.create_image((self.x1)*canvas.rel,(self.y1)*canvas.rel, image=self.image_resized, anchor=tk.NW)
+        
     # def move(self, x:int, y:int):
     #     pass
 

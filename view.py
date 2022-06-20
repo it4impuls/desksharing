@@ -28,8 +28,11 @@ class View(tk.Tk):
         self.timeMode = False
         self.showDate = date.today()
         self.edit_room = False
+        self.originalPosition  = (0,0,0,0)
 
         self.mainframe = MainFrame(self)
+        
+        # self.draw()
         self.bind('<Configure>', self.resize)
         self.bind('<<OpenAddParticipantDialog>>', self.openAddParticipantDialog)
         self.bind_all('<<AddParticipant>>', self.addParticipant)
@@ -45,7 +48,13 @@ class View(tk.Tk):
         self.bind('<<RemoveParticipant>>', self.removeParticpantFromList)
         self.bind('<<ReleasedFromSidebar>>', self.onReleasedFromSidebar)
         self.bind('<<EditRoom>>', self.editRoom)
+        self.bind('<<AddSeat>>', self.addSeat)
         self.bind_all('<Escape>', self.onEsc)
+        self.bind_all('<r>', self.onR)
+        self.bind_all('<+>', self.onPlus)
+        self.bind_all('<KP_Add>', self.onPlus)
+        self.bind_all('<minus>', self.onMinus)
+        self.bind_all('<KP_Subtract>', self.onMinus)
 
         self.oldWidth = self.winfo_width()
         self.oldHeight = self.winfo_height()
@@ -63,6 +72,7 @@ class View(tk.Tk):
         self.mainframe.roommap.draw()
         self.mainframe.roommap.pack(fill='both', expand=True)
         self.mainframe.pack(fill='both', expand=True)
+        self.mainframe.toolbar.update()
     def onClickOnRoommap(self, event):
         if event.data.num in [1, 3]:    #leftclick or rightclick
             seat = self.config.data.getSeat(event.data.x, event.data.y)
@@ -70,6 +80,7 @@ class View(tk.Tk):
             if isinstance(seat, data.Seat):
                 if self.edit_room:
                     self.draggedSeat = seat
+                    self.originalPosition = (self.draggedSeat.x1, self.draggedSeat.y1, self.draggedSeat.x2, self.draggedSeat.y2)
 
                 else:
                     participant = seat.getParticipant(self.showDate)
@@ -77,12 +88,21 @@ class View(tk.Tk):
                         self.draggedParticipant = participant
     def onReleasedFromRoomMap(self, event):
         newSeat = self.config.data.getSeat(event.data.x, event.data.y)
+        x,y = self.winfo_pointerxy()
         if isinstance(self.draggedSeat, data.Seat):
-            self.draggedSeat = None
+            if self.mainframe.winfo_containing(x,y) == self.mainframe.roommap:
+                if self.draggedSeat not in self.config.data.seats:
+                    self.config.data.seats.append(self.draggedSeat)
+                    self.originalPosition  = (0,0,0,0)
+                self.draggedSeat = None
+            else:
+                self.draggedSeat.x1, self.draggedSeat.y1, self.draggedSeat.x2, self.draggedSeat.y2 = self.originalPosition
+                self.draggedSeat = None
+                self.originalPosition  = (0,0,0,0)
         elif isinstance(self.draggedParticipant, data.Participant):
             if newSeat == None:   
                 # remove participent from desk if dragged over sidebar.
-                x,y = self.winfo_pointerxy()
+                
                 if self.mainframe.winfo_containing(x,y) == self.mainframe.sidebar.table:
                     self.removeParticpantFromSeat(self.draggedParticipant)
                 self.showSeat = None
@@ -123,6 +143,21 @@ class View(tk.Tk):
         if isinstance(self.draggedParticipant, data.Participant):
             self.draggedParticipant = None
             self.mainframe.roommap.draw()
+    def onR(self, event):
+        if isinstance(self.draggedSeat, data.Seat):
+            self.mainframe.roommap.delete(self.draggedSeat.img_id)
+            self.draggedSeat.rot+=1
+            if self.draggedSeat.rot>3:
+                self.draggedSeat.rot = 0
+            self.draggedSeat.draw(self.mainframe.roommap)
+    def onPlus(self, event):
+        if self.edit_room:
+            self.config.data.scale *= 1.1
+            self.mainframe.roommap.draw()
+    def onMinus(self, event):
+        if self.edit_room:
+            self.config.data.scale /= 1.1
+            self.mainframe.roommap.draw()
 
     def openAddParticipantDialog(self, event):
         self.addParticipantDialog = AddParticipantDialog()
@@ -150,7 +185,8 @@ class View(tk.Tk):
         self.draggedTo = None
         self.draw()
     def newFile(self, event):
-        NewFile = filedialog.askopenfilename(filetypes=(('save files','*.png'),('all files','*.*')))
+        NewFile = filedialog.askopenfilename(   filetypes=(('save files','*.png'),('all files','*.*')),
+                                                initialdir = path.join(rootDir, 'img', 'rooms'))
         self.config.data = data.Data()
         self.config.data.roomFile = NewFile
         self.mainframe.roommap.roomImg = Image.open(path.join(imgDir, 'rooms', NewFile)).convert()
@@ -159,15 +195,18 @@ class View(tk.Tk):
         self.mainframe.sidebar.refresh()
         self.mainframe.roommap.refresh()
     def openOpenDialog(self, event):
-        loadfile = filedialog.askopenfilename(filetypes=(('save files','*.sav'),('all files','*.*')))
+        loadfile = filedialog.askopenfilename(  filetypes=(('save files','*.sav'),('all files','*.*')), 
+                                                initialdir = path.join(rootDir, 'saves'))
         self.config.loadData(loadfile)
-        
+        self.mainframe.roommap.roomImg = Image.open(path.join(imgDir, 'rooms', self.config.data.roomFile)).convert()
         self.showSeat = None
         self.draw()
         self.mainframe.sidebar.refresh()
         self.mainframe.roommap.refresh()
     def openSaveAsDialog(self, event):
-        savefile = filedialog.asksaveasfilename(filetypes=(('save files','*.sav'),('all files','*.*')), defaultextension='.sav')
+        savefile = filedialog.asksaveasfilename(filetypes=(('save files','*.sav'),('all files','*.*')), 
+                                                defaultextension='.sav', 
+                                                initialdir = path.join(rootDir, 'saves'))
         self.config.saveData(savefile)
     def openEditParticipantDialog(self, event):
         self.editParticipantDialog = EditParticipantDialog(event.data)
@@ -192,11 +231,17 @@ class View(tk.Tk):
         assert isinstance(bttn, tk.Button)
         if bttn.cget("relief") == tk.FLAT:
             bttn.config(relief=tk.SUNKEN)
+            self.mainframe.toolbar.addSeatBttn.pack(side=tk.LEFT, padx=2, pady=1)
             self.edit_room = True
         elif bttn.cget("relief") == tk.SUNKEN:
             bttn.config(relief=tk.FLAT)
+            self.mainframe.toolbar.addSeatBttn.pack_forget()
             self.edit_room = False
-        pass
+    def addSeat(self, event):
+        cursorPos = ((self.winfo_pointerx()-self.winfo_rootx()), 
+                      (self.winfo_pointery()-self.winfo_rooty()))
+        self.draggedSeat = data.Seat(cursorPos[0], cursorPos[1], cursorPos[0]+132, cursorPos[1] + 136)
+        self.draggedSeat.draw(self.mainframe.roommap)
     def removeParticpantFromSeat(self, participent):
         if isinstance(participent, data.Participant):
             participent.doAssignmentsByTime(participent.entryDate,participent.entryDate,self.config.data.removeAssignment, True)
@@ -214,6 +259,7 @@ class MainFrame(tk.Frame):
         self.roommap = Roommap(self)
         # self.menubar = MenuBar(self)
         self.toolbar = ToolBar(self.master)
+        self.toolbar.addSeatBttn.pack_forget()
         self.sidebar = SideBar(self.master)
 class MenuBar(tk.Menu): #disabled
     def __init__(self, master):
@@ -243,6 +289,7 @@ class ToolBar(tk.Frame):
         self.addButton('folder_open_icon&24.png', '<<OpenOpenDialog>>')
         self.addButton('save_icon&24.png', '<<OpenSaveAsDialog>>')
         self.editBttn = self.addButton('wrench_icon&24.png', '<<EditRoom>>')
+        
         ttk.Separator(self, orient=tk.VERTICAL).pack(side=tk.LEFT, fill='y')
         self.addButton('doc_plus_icon&24.png', '<<OpenAddParticipantDialog>>')
         self.addButton('doc_minus_icon&24.png', '<<RemoveParticipant>>')
@@ -250,9 +297,12 @@ class ToolBar(tk.Frame):
 
         self.dateText =  DateEntry(self, width=10, date_pattern = 'dd.mm.yyyy')
         self.dateText.pack(side=tk.LEFT, padx=2, pady=1)
+        self.addSeatBttn = self.addButton('user_icon&24.png', '<<AddSeat>>')
+        
         self.dateText.bind('<<DateEntrySelected>>', self.applyDate)
         self.dateText.bind('<Return>', self.applyDate)
         self.dateText.bind('<FocusOut>', self.applyDate)
+        self.bind('<ButtonRelease>', self.onRelease)
 
         self.pack(side=tk.TOP, fill=tk.X)
         self.update()
@@ -267,6 +317,12 @@ class ToolBar(tk.Frame):
         self.master.showDate = self.master.config.data.stringToDate(self.dateText.get_date())
         self.focus_set()
         self.master.draw()
+
+    def onRelease(self, event):
+        if isinstance(self.master.draggedSeat, data.Seat):
+            self.master.draggedSeat = None
+            self.master.draw()
+
 class SideBar(tk.Frame):
     def __init__(self, master):
         super().__init__(master, bd=1, relief=tk.RAISED)
@@ -337,6 +393,7 @@ class Roommap(tk.Canvas):
         else:
             self.roomImg = Image.open(path.join(imgDir, 'rooms', self.master.master.config.data.roomFile)).convert()
         self.rel = 1
+        # self.scale = 1
         
         self.bind('<Button>', self.onClick)
         self.bind('<ButtonRelease>', self.onRelease)    # Triggers everywhere as if in master
@@ -351,9 +408,9 @@ class Roommap(tk.Canvas):
         self.roomImgResized = ImageTk.PhotoImage(ImageOps.scale(self.roomImg, self.rel))
         self.create_image(0, 0, anchor=tk.NW, image=self.roomImgResized)
         
-        self.font = font.Font(family='Helvetica', size=int(max(20*self.rel*0.75, 6)))
+        self.font = font.Font(family='Helvetica', size=int(max(20*self.rel, 0)))
         for seat in self.master.master.config.data.seats:
-            seat.draw(self, self.rel)           # seperate, so that all seats are drawn before the nametags, so nametags are layered above.
+            seat.draw(self, scale = self.master.master.config.data.scale)           # seperate, so that all seats are drawn before the nametags, so nametags are layered above.
         for seat in self.master.master.config.data.seats:
             for assignment in seat.assignments:
                 if assignment.begin <= self.master.master.showDate and assignment.end >= self.master.master.showDate:

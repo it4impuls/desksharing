@@ -39,6 +39,7 @@ class Config():
             file.write(int(len(self.data.seats)).to_bytes(2, 'big'))
             file.write(int(len(self.data.participants)).to_bytes(2, 'big'))
             file.write(int(len(self.data.assignments)).to_bytes(2, 'big'))
+            file.write(round(self.data.scale*1000).to_bytes(2, 'big'))
             for seat in iter(self.data.seats):
                 file.write(int(seat.x1).to_bytes(2, 'big'))
                 file.write(int(seat.y1).to_bytes(2, 'big'))
@@ -74,11 +75,11 @@ class Config():
             with open(path, 'rb') as file:
                 if(file.read(4).decode('utf-8') == 'DeSh'):
                     roomlen = int.from_bytes(file.read(2), 'big')
-                    roomFile = file.read(roomlen).decode('utf-8')
-                    new_data.roomFile = roomFile
+                    new_data.roomFile = file.read(roomlen).decode('utf-8')
                     lenSeats = int.from_bytes(file.read(2), 'big')
                     lenParticipants = int.from_bytes(file.read(2), 'big')
                     lenAssignments = int.from_bytes(file.read(2), 'big')
+                    new_data.scale = int.from_bytes(file.read(2), 'big')/1000
                     for i in range(lenSeats):
                         x1 = int.from_bytes(file.read(2), 'big')
                         y1 = int.from_bytes(file.read(2), 'big')
@@ -111,6 +112,7 @@ class Config():
                         endYear = int.from_bytes(file.read(2), 'big')
                         new_data.assignments.append(data.Assignment(participant, seat, date(beginYear, beginMonth, beginDay), date(endYear, endMonth, endDay)))
             self.data = new_data
+            
         except Exception as e:
             print("Can't load File")
             self.data = data.ITLOFT()
