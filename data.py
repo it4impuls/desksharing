@@ -1,6 +1,8 @@
 from datetime import date, timedelta
 from PIL import ImageOps, ImageTk, Image
 import tkinter as tk
+from os import path
+rootDir = path.dirname(path.abspath(__file__))
 
 class Data():
     def __init__(self):
@@ -146,10 +148,11 @@ class Participant():
             func(assignment, beginDate, endDate, exclude)
     def draw(self, rel, font, canvas:tk.Canvas, x1,x2,y1,y2):
         x = x1*rel+(x2*rel-x1*rel)/2
-        yName = y1*rel+font.cget('size')*0.5
-        yNote = y1*rel+font.cget('size')*1.5
-        yEntry = y1*rel+font.cget('size')*2.5
-        yExit = y1*rel+font.cget('size')*3.5
+        # height = ((y2-y1)/2 - (font.cget('size')*2))*rel
+        yName = y1*rel+font.cget('size')*0.5# + height
+        yNote = y1*rel+font.cget('size')*1.5# + height
+        yEntry = y1*rel+font.cget('size')*2.5# + height
+        yExit = y1*rel+font.cget('size')*3.5# + height
 
         self.textIDs = []
         self.textIDs.append(canvas.create_text(x, yName, text=self.lastName, font=font, fill='#EEEEEE'))
@@ -167,7 +170,7 @@ class Seat():
         self.y2 = y2
         self.assignments = []
         self.rot = rot
-        self.img = Image.open('./img/Desk.png').convert()
+        self.img = Image.open(path.join( rootDir, 'img', 'Desk.png')).convert()
         self.img_id = None
 
         # self.offset_x = 0

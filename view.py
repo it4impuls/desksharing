@@ -1,14 +1,15 @@
 # import calendar
 import tkinter as tk, tkinter.ttk as ttk
-import math, data, config
+import data, config
 from tkinter import messagebox, font, filedialog
 from datetime import date, timedelta
 from PIL import ImageOps, ImageTk, Image
 from tkcalendar import Calendar, DateEntry
+from os import path
 
-rootDir = './'
-imgDir = rootDir + 'img/'
-iconDir = imgDir + 'icons/'
+rootDir = path.dirname(path.abspath(__file__))
+imgDir = path.join(rootDir, 'img')
+iconDir =path.join(imgDir, 'icons')
 
 class View(tk.Tk):
     def __init__(self):
@@ -110,8 +111,14 @@ class View(tk.Tk):
         self.draw()
     def onReleasedFromSidebar(self,event):
         if isinstance(self.draggedParticipant, data.Participant):
-            self.showSeat = None
+            newSeat = self.config.data.getSeat(event.data.x, event.data.y)
+            if isinstance(newSeat, data.Seat):
+                self.draggedTo = newSeat
+                tk.Event.data = [1, self.draggedParticipant.entryDate, self.draggedParticipant.exitDate, False]
+                self.event_generate('<<MoveParticipant>>')
+            # self.showSeat = None
             self.draggedParticipant = None
+            self.mainframe.roommap.update()
     def onEsc(self, event):
         if isinstance(self.draggedParticipant, data.Participant):
             self.draggedParticipant = None
@@ -248,7 +255,7 @@ class ToolBar(tk.Frame):
         self.update()
         
     def addButton(self, iconFilename, eventName):
-        icon = ImageTk.PhotoImage(Image.open(iconDir + iconFilename))
+        icon = ImageTk.PhotoImage(Image.open(path.join(iconDir, iconFilename)))
         button = tk.Button(self, image=icon, relief=tk.FLAT, command=lambda: self.event_generate(eventName))
         button.image = icon
         button.pack(side=tk.LEFT, padx=2, pady=1)
@@ -299,7 +306,6 @@ class SideBar(tk.Frame):
         if self.table.identify_row(event.y) != '':
             clickedOn = int(self.table.identify_row(event.y))
             self.master.draggedParticipant = self.master.config.data.participants[clickedOn]
-            # self.master.mainframe.roommap.draw()
         else:
             self.master.draggedParticipant = None
     def onRelease(self, event):
@@ -323,7 +329,7 @@ class Roommap(tk.Canvas):
     def __init__(self, master):
         super().__init__(master)
         self.master = master
-        self.roomImg = Image.open('./room.png').convert()
+        self.roomImg = Image.open(path.join(imgDir, 'rooms', 'ITloft.png')).convert()
         self.rel = 1
         
         self.bind('<Button>', self.onClick)
@@ -346,7 +352,6 @@ class Roommap(tk.Canvas):
             for assignment in seat.assignments:
                 if assignment.begin <= self.master.master.showDate and assignment.end >= self.master.master.showDate:
                     self.drawParticipant(seat, assignment.participant)
-    
         # items = self.find_all()
         # pass
 
@@ -360,13 +365,12 @@ class Roommap(tk.Canvas):
         if isinstance(dragged_participent, data.Participant):
             if len(dragged_participent.textIDs) > 0:
                 root = self.coords(dragged_participent.textIDs[0])
-                root[1] += self.font.cget("size")
                 if len(root)==0:
                     root=cursorPos
+                root[1] += self.font.cget("size")
                 reMove = (cursorPos[0]-root[0], cursorPos[1]-root[1])
                 for txtID in dragged_participent.textIDs:
                     self.move(txtID, reMove[0], reMove[1])
-                    # self.create_rectangle(self.bbox(txtID))
             else:
                 x_len = seats_temp[0].x2-seats_temp[0].x1
                 y_len = seats_temp[0].y2-seats_temp[0].y1
@@ -377,27 +381,20 @@ class Roommap(tk.Canvas):
                 dragged_participent.draw(self.rel, self.font, self, x1,x2,y1,y2)
             
         elif isinstance(dragged_seat, data.Seat):
-            
             root = self.coords(dragged_seat.img_id)
-            
             width=dragged_seat.x2-dragged_seat.x1
             height=dragged_seat.y2-dragged_seat.y1
             root[0] = (root[0] + width*self.rel/2)
             root[1] = (root[1] + height*self.rel/2)
-            
-            # print(root)
-            
 
             reMove = (cursorPos[0]-root[0], cursorPos[1]-root[1])
             if any(i > snapSize or snapSize < -i for i in reMove):
-                # print(root)
                 if (reMove[0] > snapSize or snapSize < -reMove[0]):
                     self.move(dragged_seat.img_id, reMove[0], 0)
                 if (reMove[1] > snapSize or snapSize < -reMove[1]):
                     self.move(dragged_seat.img_id, 0, reMove[1])
                 
                 root = self.coords(dragged_seat.img_id)
-                # print(dragged_seat.x1, dragged_seat.y1)
                 bb = self.bbox(dragged_seat.img_id)
                 dragged_seat.x1 = (bb[0]/self.rel)
                 dragged_seat.y1 = (bb[1]/self.rel)
@@ -461,7 +458,8 @@ class AddParticipantDialog(tk.Toplevel):
         noteField = tk.Entry(self, width=_width)
         noteField.grid(row=4, column=1, pady=1)
         
-        addButton = tk.Button(self, text='Hinzufügen', command=lambda: self.tryAddParticipant(firstNameField.get(), lastNameField.get(), entryDateField.get(), exitDateField.get(), noteField.get()))
+        addCmd = lambda: self.tryAddParticipant(firstNameField.get(), lastNameField.get(), entryDateField.get(), exitDateField.get(), noteField.get())
+        addButton = tk.Button(self, text='Hinzufügen', command=addCmd)
         addButton.grid(row=5, column=0, pady=1)
 
         cancelButton = tk.Button(self, text='Abbrechen', command=self.destroy)

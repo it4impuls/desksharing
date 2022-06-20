@@ -1,6 +1,9 @@
 import data
 from datetime import date, timedelta
 import os
+from os import path
+
+rootDir = path.dirname(path.abspath(__file__))
 
 class Config():
     def __init__(self):
@@ -12,7 +15,7 @@ class Config():
             pass
         self.loadData(self.lastSavefile)
     def loadConfig(self):
-        with open('./config.ini', 'r') as file:
+        with open(path.join(rootDir, 'config.ini'), 'r') as file:
             for line in file.readlines():
                 parts = line.split()
                 if parts[1] == '=':
@@ -22,7 +25,7 @@ class Config():
                         self.dateFormat = parts[2].replace('\'', '')
         file.closed
     def saveConfig(self):
-        with open('./config.ini', 'w') as file:
+        with open(path.join(rootDir, 'config.ini'), 'w') as file:
             file.writelines([
                 'lastSavefile = \'' + self.lastSavefile + '\'\n',
                 'dateFormat = \'' + self.dateFormat + '\''
