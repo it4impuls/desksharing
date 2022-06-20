@@ -150,7 +150,10 @@ class View(tk.Tk):
         self.draggedTo = None
         self.draw()
     def newFile(self, event):
-        self.config.data = data.ITLOFT()
+        NewFile = filedialog.askopenfilename(filetypes=(('save files','*.png'),('all files','*.*')))
+        self.config.data = data.Data()
+        self.config.data.roomFile = NewFile
+        self.mainframe.roommap.roomImg = Image.open(path.join(imgDir, 'rooms', NewFile)).convert()
         self.showSeat = None
         self.draw()
         self.mainframe.sidebar.refresh()
@@ -329,7 +332,10 @@ class Roommap(tk.Canvas):
     def __init__(self, master):
         super().__init__(master)
         self.master = master
-        self.roomImg = Image.open(path.join(imgDir, 'rooms', 'ITloft.png')).convert()
+        if self.master.master.config.data.roomFile == '':
+            self.roomImg = Image.open(path.join(imgDir, 'rooms', 'ITloft.png')).convert()
+        else:
+            self.roomImg = Image.open(path.join(imgDir, 'rooms', self.master.master.config.data.roomFile)).convert()
         self.rel = 1
         
         self.bind('<Button>', self.onClick)

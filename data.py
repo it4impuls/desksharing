@@ -9,6 +9,7 @@ class Data():
         self.participants = []
         self.seats = []
         self.assignments = []
+        self.roomFile = ''
     def stringToDate(self, string):
         string = str(string)
         if string.count('.') == 2:
@@ -170,23 +171,8 @@ class Seat():
         self.y2 = y2
         self.assignments = []
         self.rot = rot
-        self.img = Image.open(path.join( rootDir, 'img', 'Desk.png')).convert()
+        self.img = Image.open(path.join(rootDir, 'img', 'Desk.png')).convert()
         self.img_id = None
-
-        # self.offset_x = 0
-        # self.offset_x = 0
-        # self.offset_y = 0
-
-        # if self.rot == 0:
-        #     pass
-        # elif self.rot == 1:
-        #     self.offset_y = 1
-        #     self.offset_x = -1
-        # elif self.rot == 3:
-        #     self.offset_x = -40
-        #     self.offset_y = 1
-        # elif self.rot == 2:
-        #     self.offset_y = -37
 
     def getParticipant(self, date):
         for assignment in iter(self.assignments):
@@ -227,6 +213,7 @@ class Error():
 class ITLOFT(Data):
     def __init__(self):
         super().__init__()
+        self.roomFile = 'ITloft.png'
         self.seats.append(Seat(161, 362, 255, 497, 3))
         self.seats.append(Seat(258, 362, 352, 497, 1))
         self.seats.append(Seat(161, 596, 255, 731, 3))

@@ -34,6 +34,8 @@ class Config():
     def saveData(self, path):
         with open(path, 'wb') as file:
             file.write(str('DeSh').encode('utf-8'))
+            file.write(int(len(self.data.roomFile)).to_bytes(2, 'big'))
+            file.write(str(self.data.roomFile).encode('utf-8'))
             file.write(int(len(self.data.seats)).to_bytes(2, 'big'))
             file.write(int(len(self.data.participants)).to_bytes(2, 'big'))
             file.write(int(len(self.data.assignments)).to_bytes(2, 'big'))
@@ -71,6 +73,9 @@ class Config():
         try:
             with open(path, 'rb') as file:
                 if(file.read(4).decode('utf-8') == 'DeSh'):
+                    roomlen = int.from_bytes(file.read(2), 'big')
+                    roomFile = file.read(roomlen).decode('utf-8')
+                    new_data.roomFile = roomFile
                     lenSeats = int.from_bytes(file.read(2), 'big')
                     lenParticipants = int.from_bytes(file.read(2), 'big')
                     lenAssignments = int.from_bytes(file.read(2), 'big')
