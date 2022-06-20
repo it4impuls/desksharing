@@ -198,7 +198,7 @@ class View(tk.Tk):
         loadfile = filedialog.askopenfilename(  filetypes=(('save files','*.sav'),('all files','*.*')), 
                                                 initialdir = path.join(rootDir, 'saves'))
         self.config.loadData(loadfile)
-        self.mainframe.roommap.roomImg = Image.open(path.join(imgDir, 'rooms', self.config.data.roomFile)).convert()
+        # self.mainframe.roommap.roomImg = Image.open(path.join(imgDir, 'rooms', self.config.data.roomFile)).convert()
         self.showSeat = None
         self.draw()
         self.mainframe.sidebar.refresh()
@@ -388,10 +388,10 @@ class Roommap(tk.Canvas):
     def __init__(self, master):
         super().__init__(master)
         self.master = master
-        if self.master.master.config.data.roomFile == '':
-            self.roomImg = Image.open(path.join(imgDir, 'rooms', 'ITloft.png')).convert()
-        else:
-            self.roomImg = Image.open(path.join(imgDir, 'rooms', self.master.master.config.data.roomFile)).convert()
+        if self.master.master.config.data.roomImage == None:
+            self.master.master.config.data.roomImage = Image.open(path.join(imgDir, 'rooms', 'ITloft.png')).convert()
+        # else:
+        #     self.roomImg = Image.open(path.join(imgDir, 'rooms', self.master.master.config.data.roomFile)).convert()
         self.rel = 1
         # self.scale = 1
         
@@ -401,11 +401,13 @@ class Roommap(tk.Canvas):
     def draw(self):
         self.update()
         self.delete("all")
+        data =self.master.master.config.data
+        # roomimg = .roomImage
         
-        relH = self.winfo_height()/self.roomImg.height
-        relW = self.winfo_width()/self.roomImg.width
+        relH = self.winfo_height()/data.roomImage.height
+        relW = self.winfo_width()/data.roomImage.width
         self.rel = max(min(relW, relH), 0.1)
-        self.roomImgResized = ImageTk.PhotoImage(ImageOps.scale(self.roomImg, self.rel))
+        self.roomImgResized = ImageTk.PhotoImage(ImageOps.scale(data.roomImage, self.rel))
         self.create_image(0, 0, anchor=tk.NW, image=self.roomImgResized)
         
         self.font = font.Font(family='Helvetica', size=int(max(20*self.rel, 0)))

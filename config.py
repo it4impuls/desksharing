@@ -2,6 +2,7 @@ import data
 from datetime import date, timedelta
 import os
 from os import path
+from PIL import Image
 
 rootDir = path.dirname(path.abspath(__file__))
 
@@ -11,8 +12,10 @@ class Config():
         self.lastSavefile = None
         self.dateFormat = '%d.%m.%Y'
         self.loadConfig()
-        if os.path.isfile(self.lastSavefile):
-            pass
+        self.roomImage = None
+        # print(self.lastSavefile)
+        # if os.path.isfile(self.lastSavefile):
+        #     pass
         self.loadData(self.lastSavefile)
     def loadConfig(self):
         with open(path.join(rootDir, 'config.ini'), 'r') as file:
@@ -31,8 +34,8 @@ class Config():
                 'dateFormat = \'' + self.dateFormat + '\''
             ])
         file.closed
-    def saveData(self, path):
-        with open(path, 'wb') as file:
+    def saveData(self, fpath):
+        with open(fpath, 'wb') as file:
             file.write(str('DeSh').encode('utf-8'))
             file.write(int(len(self.data.roomFile)).to_bytes(2, 'big'))
             file.write(str(self.data.roomFile).encode('utf-8'))
@@ -75,7 +78,8 @@ class Config():
             with open(path, 'rb') as file:
                 if(file.read(4).decode('utf-8') == 'DeSh'):
                     roomlen = int.from_bytes(file.read(2), 'big')
-                    new_data.roomFile = file.read(roomlen).decode('utf-8')
+                    roomFile = file.read(roomlen).decode('utf-8')
+                    new_data.roomImage = Image.open(os.path.join(rootDir, 'img', 'rooms', roomFile)).convert()
                     lenSeats = int.from_bytes(file.read(2), 'big')
                     lenParticipants = int.from_bytes(file.read(2), 'big')
                     lenAssignments = int.from_bytes(file.read(2), 'big')
