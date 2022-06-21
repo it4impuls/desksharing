@@ -2,9 +2,9 @@
 import tkinter as tk, tkinter.ttk as ttk
 import data, config
 from tkinter import messagebox, font, filedialog
-from datetime import date, timedelta
+from datetime import date
 from PIL import ImageOps, ImageTk, Image
-from tkcalendar import Calendar, DateEntry
+from tkcalendar import DateEntry
 from os import path
 
 rootDir = path.dirname(path.abspath(__file__))
@@ -154,10 +154,12 @@ class View(tk.Tk):
         if self.edit_room:
             self.config.data.scale *= 1.1
             self.mainframe.roommap.draw()
+            # self.mainframe.roommap.update_dragged(self.draggedParticipant,self.draggedSeat, self.config.data.seats)
     def onMinus(self, event):
         if self.edit_room:
             self.config.data.scale /= 1.1
             self.mainframe.roommap.draw()
+            # self.mainframe.roommap.update_dragged(self.draggedParticipant,self.draggedSeat, self.config.data.seats)
 
     def openAddParticipantDialog(self, event):
         self.addParticipantDialog = AddParticipantDialog()
@@ -197,7 +199,7 @@ class View(tk.Tk):
     def openOpenDialog(self, event):
         loadfile = filedialog.askopenfilename(  filetypes=(('save files','*.sav'),('all files','*.*')), 
                                                 initialdir = path.join(rootDir, 'saves'))
-        self.config.loadData(loadfile)
+        self.config.loamdata(loadfile)
         # self.mainframe.roommap.roomImg = Image.open(path.join(imgDir, 'rooms', self.config.data.roomFile)).convert()
         self.showSeat = None
         self.draw()
@@ -285,19 +287,28 @@ class MenuBar(tk.Menu): #disabled
 class ToolBar(tk.Frame):
     def __init__(self, master):
         super().__init__(master, bd=1, relief=tk.RAISED)
-        self.addButton('doc_new_icon&24.png', '<<NewFile>>')
-        self.addButton('folder_open_icon&24.png', '<<OpenOpenDialog>>')
-        self.addButton('save_icon&24.png', '<<OpenSaveAsDialog>>')
+        self.newFileBttn = self.addButton('doc_new_icon&24.png', '<<NewFile>>')
+        self.newFileTTP = CreateToolTip(self.newFileBttn, "Neuer Raum. Erschaffe einen neuern Raum mit einem Bild als Vorlage")
+        self.openFileBttn = self.addButton('folder_open_icon&24.png', '<<OpenOpenDialog>>')
+        self.openFileTTP = CreateToolTip(self.openFileBttn, "Raum laden. lade einen bestehenden Raum")
+        self.saveRoomBttn = self.addButton('save_icon&24.png', '<<OpenSaveAsDialog>>')
+        self.saveRoomTTP = CreateToolTip(self.openFileBttn, "Raum speichern. Speicher diesen Raum.")
         self.editBttn = self.addButton('wrench_icon&24.png', '<<EditRoom>>')
+        self.editTTP = CreateToolTip(self.editBttn, "Raum bearbeiten. Ermöglicht das Bewegen und Erschaffen neuer Sitze")
         
         ttk.Separator(self, orient=tk.VERTICAL).pack(side=tk.LEFT, fill='y')
-        self.addButton('doc_plus_icon&24.png', '<<OpenAddParticipantDialog>>')
-        self.addButton('doc_minus_icon&24.png', '<<RemoveParticipant>>')
+        self.addPartiBttn = self.addButton('doc_plus_icon&24.png', '<<OpenAddParticipantDialog>>')
+        self.addPartiTTP = CreateToolTip(self.addPartiBttn, "Neuen Teilnehmer hinzufügen")
+        self.remPartiBttn = self.addButton('doc_minus_icon&24.png', '<<RemoveParticipant>>')
+        self.remPartiTTP = CreateToolTip(self.addPartiBttn, "Teilnehmer löschen. Wenn ein Sitz ausgewählt ist, wird der momentane Teilnehmer von Sitz gelöscht,\
+                             ansonsten wird der ausgewählte Teilnehmer aus der Liste gelöscht")
         ttk.Separator(self, orient=tk.VERTICAL).pack(side=tk.LEFT, fill='y')
 
-        self.dateText =  DateEntry(self, width=10, date_pattern = 'dd.mm.yyyy')
+        self.datetxt = self.dateText =  DateEntry(self, width=10, date_pattern = 'dd.mm.yyyy')
+        self.dateTTP = CreateToolTip(self.datetxt, "Datum auswählen. Wähle, für welches Datum die Raum-zuteilung angezeigt werden soll")
         self.dateText.pack(side=tk.LEFT, padx=2, pady=1)
         self.addSeatBttn = self.addButton('user_icon&24.png', '<<AddSeat>>')
+        self.addSeatTTP = CreateToolTip(self.addPartiBttn, "Neuen Sitzplatz hinzufügen")
         
         self.dateText.bind('<<DateEntrySelected>>', self.applyDate)
         self.dateText.bind('<Return>', self.applyDate)
@@ -390,32 +401,36 @@ class Roommap(tk.Canvas):
         self.master = master
         if self.master.master.config.data.roomImage == None:
             self.master.master.config.data.roomImage = Image.open(path.join(imgDir, 'rooms', 'ITloft.png')).convert()
-        # else:
-        #     self.roomImg = Image.open(path.join(imgDir, 'rooms', self.master.master.config.data.roomFile)).convert()
         self.rel = 1
-        # self.scale = 1
-        
         self.bind('<Button>', self.onClick)
         self.bind('<ButtonRelease>', self.onRelease)    # Triggers everywhere as if in master
 
     def draw(self):
         self.update()
         self.delete("all")
-        data =self.master.master.config.data
-        # roomimg = .roomImage
+        master = self.master.master
+        assert isinstance(master, View)
+        mdata = master.config.data
         
-        relH = self.winfo_height()/data.roomImage.height
-        relW = self.winfo_width()/data.roomImage.width
+        relH = self.winfo_height()/mdata.roomImage.height
+        relW = self.winfo_width()/mdata.roomImage.width
         self.rel = max(min(relW, relH), 0.1)
-        self.roomImgResized = ImageTk.PhotoImage(ImageOps.scale(data.roomImage, self.rel))
+        self.roomImgResized = ImageTk.PhotoImage(ImageOps.scale(mdata.roomImage, self.rel))
         self.create_image(0, 0, anchor=tk.NW, image=self.roomImgResized)
-        
         self.font = font.Font(family='Helvetica', size=int(max(20*self.rel, 0)))
-        for seat in self.master.master.config.data.seats:
-            seat.draw(self, scale = self.master.master.config.data.scale)           # seperate, so that all seats are drawn before the nametags, so nametags are layered above.
-        for seat in self.master.master.config.data.seats:
+
+        for seat in mdata.seats:
+            seat.draw(self, scale = mdata.scale)           # seperate, so that all seats are drawn before the nametags, so nametags are layered above.
+        # print(master.draggedParticipant)
+        if isinstance(master.draggedParticipant, data.Participant):
+            cursorPos = (   round(self.winfo_pointerx()-self.winfo_rootx()), 
+                        round(self.winfo_pointery()-self.winfo_rooty()))
+            master.draggedParticipant.draw(self.rel, self.font, self, cursorPos[0], cursorPos[0]+132, cursorPos[1], cursorPos[1] + 136)
+        if isinstance(master.draggedSeat, data.Seat):
+            master.draggedSeat.draw(self, mdata.scale)
+        for seat in mdata.seats:
             for assignment in seat.assignments:
-                if assignment.begin <= self.master.master.showDate and assignment.end >= self.master.master.showDate:
+                if assignment.begin <= master.showDate and assignment.end >= master.showDate:
                     self.drawParticipant(seat, assignment.participant)
         # items = self.find_all()
         # pass
@@ -447,10 +462,13 @@ class Roommap(tk.Canvas):
             
         elif isinstance(dragged_seat, data.Seat):
             root = self.coords(dragged_seat.img_id)
+            if len(root) == 0:
+                root=cursorPos
             width=dragged_seat.x2-dragged_seat.x1
             height=dragged_seat.y2-dragged_seat.y1
             root[0] = (root[0] + width*self.rel/2)
             root[1] = (root[1] + height*self.rel/2)
+
 
             reMove = (cursorPos[0]-root[0], cursorPos[1]-root[1])
             if any(i > snapSize or snapSize < -i for i in reMove):
@@ -632,6 +650,59 @@ class MoveParticipantDialog(tk.Toplevel):
         tk.Event.data = [self.checked.get(), self.beginField.get(), self.endField.get(), True]
         self.event_generate('<<MoveParticipant>>')
 
+
+class CreateToolTip(object):
+    """
+    create a tooltip for a given widget
+    """
+    def __init__(self, widget, text='widget info'):
+        self.waittime = 500     #miliseconds
+        self.wraplength = 180   #pixels
+        self.widget = widget
+        self.text = text
+        self.widget.bind("<Enter>", self.enter)
+        self.widget.bind("<Leave>", self.leave)
+        self.widget.bind("<ButtonPress>", self.leave)
+        self.id = None
+        self.tw = None
+
+    def enter(self, event=None):
+        self.schedule()
+
+    def leave(self, event=None):
+        self.unschedule()
+        self.hidetip()
+
+    def schedule(self):
+        self.unschedule()
+        self.id = self.widget.after(self.waittime, self.showtip)
+
+    def unschedule(self):
+        id = self.id
+        self.id = None
+        if id:
+            self.widget.after_cancel(id)
+
+    def showtip(self, event=None):
+        x = y = 0
+        x, y, cx, cy = self.widget.bbox("insert")
+        x += self.widget.winfo_rootx() + 25
+        y += self.widget.winfo_rooty() + 20
+        # creates a toplevel window
+        self.tw = tk.Toplevel(self.widget)
+        # Leaves only the label and removes the app window
+        self.tw.wm_overrideredirect(True)
+        self.tw.wm_geometry("+%d+%d" % (x, y))
+        label = tk.Label(self.tw, text=self.text, justify='left',
+                       background="#ffffff", relief='solid', borderwidth=1,
+                       wraplength = self.wraplength)
+        label.pack(ipadx=1)
+
+    def hidetip(self):
+        tw = self.tw
+        self.tw= None
+        if tw:
+            tw.destroy()
 
 if __name__ == '__main__':
     View().mainloop()

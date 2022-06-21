@@ -150,7 +150,7 @@ class Participant():
             func(assignment, beginDate, endDate, exclude)
     def draw(self, rel, font, canvas:tk.Canvas, x1,x2,y1,y2):
         x = x1*rel+(x2*rel-x1*rel)/2
-        height =  ((y2-y1)/2)*rel# - (font.cget('size')*3)*rel
+        height =  ((y2-y1)/2)*rel - (font.cget('size')*2)
         yName = y1*rel+font.cget('size')*0.5 + height
         yNote = y1*rel+font.cget('size')*1.5 + height
         yEntry = y1*rel+font.cget('size')*2.5 + height
