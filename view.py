@@ -262,6 +262,7 @@ class MainFrame(tk.Frame):
         # self.menubar = MenuBar(self)
         self.toolbar = ToolBar(self.master)
         self.toolbar.addSeatBttn.pack_forget()
+        self.toolbar.addSeatTTP = CreateToolTip(self.toolbar.addSeatBttn, "Neuen Sitzplatz hinzufügen")
         self.sidebar = SideBar(self.master)
 class MenuBar(tk.Menu): #disabled
     def __init__(self, master):
@@ -292,7 +293,7 @@ class ToolBar(tk.Frame):
         self.openFileBttn = self.addButton('folder_open_icon&24.png', '<<OpenOpenDialog>>')
         self.openFileTTP = CreateToolTip(self.openFileBttn, "Raum laden. lade einen bestehenden Raum")
         self.saveRoomBttn = self.addButton('save_icon&24.png', '<<OpenSaveAsDialog>>')
-        self.saveRoomTTP = CreateToolTip(self.openFileBttn, "Raum speichern. Speicher diesen Raum.")
+        self.saveRoomTTP = CreateToolTip(self.saveRoomBttn, "Raum speichern. Speicher diesen Raum.")
         self.editBttn = self.addButton('wrench_icon&24.png', '<<EditRoom>>')
         self.editTTP = CreateToolTip(self.editBttn, "Raum bearbeiten. Ermöglicht das Bewegen und Erschaffen neuer Sitze")
         
@@ -308,7 +309,7 @@ class ToolBar(tk.Frame):
         self.dateTTP = CreateToolTip(self.datetxt, "Datum auswählen. Wähle, für welches Datum die Raum-zuteilung angezeigt werden soll")
         self.dateText.pack(side=tk.LEFT, padx=2, pady=1)
         self.addSeatBttn = self.addButton('user_icon&24.png', '<<AddSeat>>')
-        self.addSeatTTP = CreateToolTip(self.addPartiBttn, "Neuen Sitzplatz hinzufügen")
+        
         
         self.dateText.bind('<<DateEntrySelected>>', self.applyDate)
         self.dateText.bind('<Return>', self.applyDate)
