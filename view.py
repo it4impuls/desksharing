@@ -49,6 +49,7 @@ class View(tk.Tk):
         self.bind('<<ReleasedFromSidebar>>', self.onReleasedFromSidebar)
         self.bind('<<EditRoom>>', self.editRoom)
         self.bind('<<AddSeat>>', self.addSeat)
+        self.bind('<<Export>>', self.onExport)
         self.bind_all('<Escape>', self.onEsc)
         self.bind_all('<r>', self.onR)
         self.bind_all('<+>', self.onPlus)
@@ -154,13 +155,13 @@ class View(tk.Tk):
         if self.edit_room:
             self.config.data.scale *= 1.1
             self.mainframe.roommap.draw()
-            # self.mainframe.roommap.update_dragged(self.draggedParticipant,self.draggedSeat, self.config.data.seats)
     def onMinus(self, event):
         if self.edit_room:
             self.config.data.scale /= 1.1
             self.mainframe.roommap.draw()
-            # self.mainframe.roommap.update_dragged(self.draggedParticipant,self.draggedSeat, self.config.data.seats)
 
+    def onExport(self, event):
+        data.Exporter(self.config.data, self.mainframe.roommap.font, self.showDate, self.mainframe.roommap.rel)
     def openAddParticipantDialog(self, event):
         self.addParticipantDialog = AddParticipantDialog()
     def closeAddParticipantDialog(self):
@@ -309,6 +310,8 @@ class ToolBar(tk.Frame):
         self.dateTTP = CreateToolTip(self.datetxt, "Datum auswählen. Wähle, für welches Datum die Raum-zuteilung angezeigt werden soll")
         self.dateText.pack(side=tk.LEFT, padx=2, pady=1)
         self.addSeatBttn = self.addButton('user_icon&24.png', '<<AddSeat>>')
+
+        self.exportbttn = self.addButton('clipboard_past_icon&24.png', '<<Export>>')
         
         
         self.dateText.bind('<<DateEntrySelected>>', self.applyDate)

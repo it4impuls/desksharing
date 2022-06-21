@@ -1,5 +1,6 @@
 from datetime import date, timedelta
-from PIL import ImageOps, ImageTk, Image
+from tkinter.font import Font
+from PIL import ImageOps, ImageTk, Image, ImageDraw, ImageFont
 import tkinter as tk
 from os import path
 rootDir = path.dirname(path.abspath(__file__))
@@ -9,7 +10,7 @@ class Data():
         self.participants = []
         self.seats = []
         self.assignments = []
-        self.roomImg = None
+        self.roomImage = None
         self.scale = 1
     def stringToDate(self, string):
         string = str(string)
@@ -205,6 +206,42 @@ class Assignment():
         self.end = end
         participant.assignments.append(self)
         seat.assignments.append(self)
+
+class Exporter():
+    def __init__(self, data:Data, tfont:Font, time:date, rel) -> None:
+        font = Font(family='Arial', size=20*data.scale)
+        ifont = ImageFont.truetype('arial.ttf', 20*data.scale)
+        room = data.roomImage
+        for seat in data.seats:
+            assert isinstance(seat, Seat)
+            room.alpha_composite(seat.img.rotate(90*seat.rot), (seat.x1, seat.y1))
+        roomDraw = ImageDraw.Draw(room)
+        assert isinstance(roomDraw, ImageDraw.ImageDraw)
+        for seat in data.seats:
+            assert isinstance(seat, Seat)
+            for assignment in seat.assignments:
+                if assignment.begin <= time and assignment.end >= time:
+                    participant = assignment.participant
+                    assert isinstance(participant, Participant)
+                    x = seat.x1 + (seat.x2-seat.x1)/2
+                    height =  ((seat.y2-seat.y1)/2) - (font.cget('size')*2)
+                    yName = seat.y1+font.cget('size')*0.5 + height
+                    yNote = seat.y1+font.cget('size')*1.5 + height
+                    yEntry = seat.y1+font.cget('size')*2.5 + height
+                    yExit = seat.y1+font.cget('size')*3.5 + height
+
+                    w, h = roomDraw.textsize(participant.lastName, font=ifont)
+                    roomDraw.text((x-w/2,yName), participant.lastName, font=ifont, fill='#EEEEEE')
+                    w, h = roomDraw.textsize(participant.note, font=ifont)
+                    roomDraw.text((x-w/2,yNote), participant.note, font=ifont, fill='#EEEEEE')
+                    w, h = roomDraw.textsize(participant.entryDate.strftime('%d.%m.%Y'), font=ifont)
+                    roomDraw.text((x-w/2,yEntry), participant.entryDate.strftime('%d.%m.%Y'), font=ifont, fill='#00FF00')
+                    w, h = roomDraw.textsize(participant.exitDate.strftime('%d.%m.%Y'), font=ifont)
+                    roomDraw.text((x-w/2,yExit), participant.exitDate.strftime('%d.%m.%Y'), font=ifont, fill='#FF0000')
+
+
+        room.save("room.png")
+
 
 class Error():
     def __init__(self, message):
