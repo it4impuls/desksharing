@@ -189,7 +189,7 @@ class View(tk.Tk):
         Args:
             event (tk.Event): Automatically get send with tk bindings
         """
-        if isinstance(self.draggedSeat, data.Seat) and isinstance(self.draggedSeat.img_id, str):
+        if isinstance(self.draggedSeat, data.Seat) and isinstance(self.draggedSeat.img_id, int):
             self.mainframe.roommap.delete(self.draggedSeat.img_id)
             self.draggedSeat.rot+=1
             if self.draggedSeat.rot>3:
@@ -294,10 +294,17 @@ class View(tk.Tk):
         self.mainframe.sidebar.refresh()
         self.mainframe.roommap.refresh()
     def openSaveAsDialog(self, event:tk.Event):
-        savefile = filedialog.asksaveasfilename(filetypes=(('save files','*.sav'),('all files','*.*')), 
-                                                defaultextension='.sav', 
+        if isinstance(self.config.lastSavefile, str):
+            savefile = filedialog.asksaveasfilename(filetypes=(('save files','*.sav'),('all files','*.*')), 
+                                                    defaultextension='.sav',
+                                                    initialfile=path.split(self.config.lastSavefile)[1],
+                                                    initialdir = path.join(rootDir, 'saves'))
+        else:
+            savefile = filedialog.asksaveasfilename(filetypes=(('save files','*.sav'),('all files','*.*')), 
+                                                defaultextension='.sav',
                                                 initialdir = path.join(rootDir, 'saves'))
-        self.config.saveData(savefile)
+        if savefile != "":
+            self.config.saveData(savefile)
     def openEditParticipantDialog(self, event:tk.Event):
         self.editParticipantDialog = EditParticipantDialog(event.data)  # type: ignore
     def editParticipant(self, event:tk.Event):
@@ -348,32 +355,10 @@ class MainFrame(tk.Frame):
         self.master = master
         assert isinstance(self.master, View)
         self.roommap = Roommap(self)
-        # self.menubar = MenuBar(self.master)
         self.toolbar = ToolBar(self.master)
         self.toolbar.addSeatBttn.pack_forget()
         self.toolbar.addSeatTTP = CreateToolTip(self.toolbar.addSeatBttn, "Neuen Sitzplatz hinzufügen")
         self.sidebar = SideBar(self.master)
-# class MenuBar(tk.Menu): #disabled
-#     def __init__(self, master):
-#         super().__init__(master)
-#         self.master.config(menu=self)
-
-#         fileMenu = tk.Menu(self, tearoff=0)
-#         fileMenu.add_command(label='New', underline=0, command=lambda: self.master.event_generate('<<NewFile>>'))
-#         fileMenu.add_command(label='Öffnen', underline=0, command=lambda: self.master.event_generate('<<OpenOpenDialog>>'))
-#         fileMenu.add_command(label='Speichern', underline=0)
-#         fileMenu.add_command(label='Speichern unter', underline=5, command=lambda: self.master.event_generate('<<OpenSaveAsDialog>>'))
-#         fileMenu.add_command(label='Beenden', underline=0, command=self.quit)
-#         self.add_cascade(label='Datei', underline=0, menu=fileMenu)
-
-#         editMenu = tk.Menu(self, tearoff=0)
-#         self.add_cascade(label='Bearbeiten', underline=0, menu=editMenu)
-
-#         viewMenu = tk.Menu(self, tearoff=0)
-#         self.add_cascade(label='Ansicht', underline=0, menu=viewMenu)
-
-#         helpMenu = tk.Menu(self, tearoff=0)
-#         self.add_cascade(label='?', underline=0, menu=helpMenu)
 class ToolBar(tk.Frame):
     def __init__(self, master:View):
         super().__init__(master, bd=1, relief=tk.RAISED)
@@ -554,7 +539,7 @@ class Roommap(tk.Canvas):
                 y2 = (cursorPos[1]+(y_len/2))/self.rel
                 dragged_participent.draw(self.rel, self.font, self, x1,x2,y1,y2)
             
-        elif isinstance(dragged_seat, data.Seat) and isinstance(dragged_seat.img_id, str):
+        elif isinstance(dragged_seat, data.Seat) and isinstance(dragged_seat.img_id, int):
             root = self.coords(dragged_seat.img_id)
             if len(root) == 0:
                 root=cursorPos
