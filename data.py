@@ -208,10 +208,11 @@ class Assignment():
         seat.assignments.append(self)
 
 class Exporter():
-    def __init__(self, data:Data, tfont:Font, time:date, rel) -> None:
+    def __init__(self, data:Data, tfont:Font, time:date, filename) -> None:
         font = Font(family='Arial', size=int(20*data.scale))
         ifont = ImageFont.truetype('arial.ttf', int(20*data.scale))
         room = data.roomImage.copy()
+        assert isinstance(room, Image.Image)
         for seat in data.seats:
             assert isinstance(seat, Seat)
             room.alpha_composite(seat.img.rotate(90*seat.rot), (seat.x1, seat.y1))
@@ -240,7 +241,7 @@ class Exporter():
                     roomDraw.text((x-w/2,yExit), participant.exitDate.strftime('%d.%m.%Y'), font=ifont, fill='#FF0000')
 
 
-        room.save("room.png")
+        room.save(filename)
 
 
 class Error():

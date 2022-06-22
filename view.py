@@ -228,12 +228,15 @@ class View(tk.Tk):
                 self.config.data.seats.remove(self.draggedSeat)
                 self.draggedSeat = None
     def onExport(self, event:tk.Event):
-        """ Export current room to png
+        """ Export current room to png.
 
         Args:
             event (tk.Event): Automatically get send with tk bindings
         """
-        data.Exporter(self.config.data, self.mainframe.roommap.font, self.showDate, self.mainframe.roommap.rel)
+        saveAs = filedialog.asksaveasfilename(  filetypes=(('save files','*.png'),('all files','*.*')),
+                                            defaultextension='.png', 
+                                            initialdir = rootDir)
+        data.Exporter(self.config.data, self.mainframe.roommap.font, self.showDate, saveAs)
     def openAddParticipantDialog(self, event:tk.Event):
         self.addParticipantDialog = AddParticipantDialog()
     def closeAddParticipantDialog(self):
@@ -410,7 +413,6 @@ class ToolBar(tk.Frame):
         if isinstance(self.master.draggedSeat, data.Seat):
             self.master.draggedSeat = None
             self.master.draw()
-
 class SideBar(tk.Frame):
     def __init__(self, master):
         super().__init__(master, bd=1, relief=tk.RAISED)
@@ -470,8 +472,6 @@ class SideBar(tk.Frame):
             self.event_generate('<<OpenEditParticipantDialog>>')
         else:
             self.master.draggedParticipant = None
-        
-
 class Roommap(tk.Canvas):
     def __init__(self, master):
         super().__init__(master)
@@ -627,7 +627,6 @@ class AddParticipantDialog(tk.Toplevel):
     def tryAddParticipant(self, firstName, lastName, entryDate, exitDate, note=''):
         tk.Event.data = [firstName, lastName, entryDate, exitDate, note]
         self.event_generate('<<AddParticipant>>')
-    
 class EditParticipantDialog(tk.Toplevel):
     def __init__(self, participant):
         super().__init__()
@@ -679,7 +678,6 @@ class EditParticipantDialog(tk.Toplevel):
     def tryEditParticipant(self, participant, firstName, lastName, entryDate, exitDate, note=''):
         tk.Event.data = [participant, firstName, lastName, entryDate, exitDate, note]
         self.event_generate('<<EditParticipant>>')     
-
 class MoveParticipantDialog(tk.Toplevel):
     def __init__(self, participant):
         super().__init__()
@@ -726,7 +724,6 @@ class MoveParticipantDialog(tk.Toplevel):
     def tryMoveParticipant(self):
         tk.Event.data = [self.checked.get(), self.beginField.get(), self.endField.get(), True]
         self.event_generate('<<MoveParticipant>>')
-
 
 class CreateToolTip(object):
     """
