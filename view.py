@@ -168,7 +168,6 @@ class View(tk.Tk):
                 self.event_generate('<<MoveParticipant>>')
             # self.showSeat = None
             self.draggedParticipant = None
-            # self.mainframe.roommap.update()
     def onEsc(self, event:tk.Event):
         """ reset dragged participents when ESC is hit
 
@@ -250,12 +249,17 @@ class View(tk.Tk):
             self.mainframe.sidebar.refresh()
     def openMoveParticipantDialog(self, event:tk.Event):
         newSeat = self.config.data.getSeat(event.data.x, event.data.y)
-        if newSeat != None:
+        if isinstance(newSeat, data.data.Seat):
             self.moveParticipantDialog = MoveParticipantDialog(self.draggedParticipant)
     def closeMoveParticipantDialog(self):
         self.moveParticipantDialog.destroy()
     def moveParticipant(self, event:tk.Event):
-        if event.data[0] == 1:
+        """ move Participent to new seat.
+        Args:
+            event (tk.Event): Automatically get send with tk bindings
+        """
+        if event.data[0] == 1:  # leftclick
+            # event.data[0] = startDate independent of participent join date, event.data[1] = endDate independent of participent leave date, 
             self.config.data.moveParticipant(self.draggedParticipant, self.draggedTo, event.data[1], event.data[2])
         if event.data[3]:
             self.closeMoveParticipantDialog()
@@ -263,6 +267,12 @@ class View(tk.Tk):
         self.draggedTo = None
         self.draw()
     def newFile(self, event:tk.Event):
+        """ Create a new room.
+            Takes an image for the new background and resets everything.
+
+        Args:
+            event (tk.Event): Automatically get send with tk bindings
+        """
         NewFile = filedialog.askopenfilename(   filetypes=(('save files','*.png'),('all files','*.*')),
                                                 initialdir = path.join(rootDir, 'img', 'rooms'))
         self.config.data = data.Data()
@@ -276,7 +286,6 @@ class View(tk.Tk):
         loadfile = filedialog.askopenfilename(  filetypes=(('save files','*.sav'),('all files','*.*')), 
                                                 initialdir = path.join(rootDir, 'saves'))
         self.config.loadData(loadfile)
-        # self.mainframe.roommap.roomImg = Image.open(path.join(imgDir, 'rooms', self.config.data.roomFile)).convert()
         self.showSeat = None
         self.draw()
         self.mainframe.sidebar.refresh()

@@ -194,9 +194,6 @@ class Seat():
         img = self.img.rotate(self.rot*90,resample=Image.NEAREST)
         self.image_resized=ImageTk.PhotoImage(ImageOps.scale(img, canvas.rel * scale))
         self.img_id = canvas.create_image((self.x1)*canvas.rel,(self.y1)*canvas.rel, image=self.image_resized, anchor=tk.NW)
-        
-    # def move(self, x:int, y:int):
-    #     pass
 
 class Assignment():
     def __init__(self, participant, seat, begin, end):
