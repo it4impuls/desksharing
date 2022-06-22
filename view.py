@@ -29,6 +29,7 @@ class View(tk.Tk):
         self.showDate = date.today()
         self.edit_room = False
         self.originalPosition  = (0,0,0,0)
+        self.deskDimensions = (132, 136)
 
         self.mainframe = MainFrame(self)
         
@@ -56,6 +57,7 @@ class View(tk.Tk):
         self.bind_all('<KP_Add>', self.onPlus)
         self.bind_all('<minus>', self.onMinus)
         self.bind_all('<KP_Subtract>', self.onMinus)
+        self.bind_all('<Delete>', self.onDel)
 
         self.oldWidth = self.winfo_width()
         self.oldHeight = self.winfo_height()
@@ -139,10 +141,13 @@ class View(tk.Tk):
                 self.event_generate('<<MoveParticipant>>')
             # self.showSeat = None
             self.draggedParticipant = None
-            self.mainframe.roommap.update()
+            # self.mainframe.roommap.update()
     def onEsc(self, event):
         if isinstance(self.draggedParticipant, data.Participant):
             self.draggedParticipant = None
+            self.mainframe.roommap.draw()
+        if isinstance(self.draggedSeat, data.Seat):
+            self.draggedSeat = None
             self.mainframe.roommap.draw()
     def onR(self, event):
         if isinstance(self.draggedSeat, data.Seat):
@@ -150,7 +155,7 @@ class View(tk.Tk):
             self.draggedSeat.rot+=1
             if self.draggedSeat.rot>3:
                 self.draggedSeat.rot = 0
-            self.draggedSeat.draw(self.mainframe.roommap)
+            self.draggedSeat.draw(self.mainframe.roommap, self.config.data.scale)
     def onPlus(self, event):
         if self.edit_room:
             self.config.data.scale *= 1.1
@@ -159,7 +164,17 @@ class View(tk.Tk):
         if self.edit_room:
             self.config.data.scale /= 1.1
             self.mainframe.roommap.draw()
-
+    def onDel(self, event):
+        if isinstance(self.draggedSeat, data.Seat):     # remove seat
+            if self.draggedSeat in self.config.data.seats:
+                for assignment in self.draggedSeat.assignments:
+                    assert isinstance(assignment, data.Assignment)
+                    assert isinstance(assignment.participant, data.Participant)
+                    assignment.participant.assignments.remove(assignment)
+                    self.config.data.assignments.remove(assignment)
+                    self.draggedSeat.assignments.remove(assignment)
+                self.config.data.seats.remove(self.draggedSeat)
+                self.draggedSeat = None
     def onExport(self, event):
         data.Exporter(self.config.data, self.mainframe.roommap.font, self.showDate, self.mainframe.roommap.rel)
     def openAddParticipantDialog(self, event):
@@ -192,7 +207,7 @@ class View(tk.Tk):
                                                 initialdir = path.join(rootDir, 'img', 'rooms'))
         self.config.data = data.Data()
         self.config.data.roomFile = NewFile
-        self.mainframe.roommap.roomImg = Image.open(path.join(imgDir, 'rooms', NewFile)).convert()
+        self.config.data.roomImage = Image.open(path.join(imgDir, 'rooms', NewFile)).convert()
         self.showSeat = None
         self.draw()
         self.mainframe.sidebar.refresh()
@@ -200,7 +215,7 @@ class View(tk.Tk):
     def openOpenDialog(self, event):
         loadfile = filedialog.askopenfilename(  filetypes=(('save files','*.sav'),('all files','*.*')), 
                                                 initialdir = path.join(rootDir, 'saves'))
-        self.config.loamdata(loadfile)
+        self.config.loadData(loadfile)
         # self.mainframe.roommap.roomImg = Image.open(path.join(imgDir, 'rooms', self.config.data.roomFile)).convert()
         self.showSeat = None
         self.draw()
@@ -223,10 +238,13 @@ class View(tk.Tk):
     def closeEditParticipantDialog(self):
         self.editParticipantDialog.destroy()
     def removeParticpantFromList(self, event):
-        if isinstance(self.showSeat, data.Seat):
+        if isinstance(self.showSeat, data.Seat) and isinstance(self.showSeat.getParticipant(self.showDate), data.Participant):
             self.removeParticpantFromSeat(self.showSeat.getParticipant(self.showDate))
-        elif True:
-            self.config.data.removeParticipant(int(self.mainframe.sidebar.table.selection()[0]))
+        elif len(self.mainframe.sidebar.table.selection())>0:
+            for i in self.mainframe.sidebar.table.selection():
+                self.config.data.removeParticipant(int(i))
+        else:
+            return
         self.draw()
         self.mainframe.sidebar.refresh()
     def editRoom(self, event):
@@ -243,16 +261,14 @@ class View(tk.Tk):
     def addSeat(self, event):
         cursorPos = ((self.winfo_pointerx()-self.winfo_rootx()), 
                       (self.winfo_pointery()-self.winfo_rooty()))
-        self.draggedSeat = data.Seat(cursorPos[0], cursorPos[1], cursorPos[0]+132, cursorPos[1] + 136)
-        self.draggedSeat.draw(self.mainframe.roommap)
+        self.draggedSeat = data.Seat(cursorPos[0], cursorPos[1], cursorPos[0]+self.deskDimensions[0], cursorPos[1]+self.deskDimensions[1])
+        self.draggedSeat.draw(self.mainframe.roommap, self.config.data.scale)
     def removeParticpantFromSeat(self, participent):
         if isinstance(participent, data.Participant):
             participent.doAssignmentsByTime(participent.entryDate,participent.entryDate,self.config.data.removeAssignment, True)
             for iid in participent.textIDs:
                 self.mainframe.roommap.delete(iid)
             participent.textIDs = []
-    def asignParticipentToSeat(self, participent):
-        pass
 
 class MainFrame(tk.Frame):
     def __init__(self, master):
@@ -302,7 +318,7 @@ class ToolBar(tk.Frame):
         self.addPartiBttn = self.addButton('doc_plus_icon&24.png', '<<OpenAddParticipantDialog>>')
         self.addPartiTTP = CreateToolTip(self.addPartiBttn, "Neuen Teilnehmer hinzufügen")
         self.remPartiBttn = self.addButton('doc_minus_icon&24.png', '<<RemoveParticipant>>')
-        self.remPartiTTP = CreateToolTip(self.addPartiBttn, "Teilnehmer löschen. Wenn ein Sitz ausgewählt ist, wird der momentane Teilnehmer von Sitz gelöscht,\
+        self.remPartiTTP = CreateToolTip(self.remPartiBttn, "Teilnehmer löschen. Wenn ein Sitz ausgewählt ist, wird der momentane Teilnehmer von Sitz gelöscht,\
                              ansonsten wird der ausgewählte Teilnehmer aus der Liste gelöscht")
         ttk.Separator(self, orient=tk.VERTICAL).pack(side=tk.LEFT, fill='y')
 
@@ -429,7 +445,7 @@ class Roommap(tk.Canvas):
         if isinstance(master.draggedParticipant, data.Participant):
             cursorPos = (   round(self.winfo_pointerx()-self.winfo_rootx()), 
                         round(self.winfo_pointery()-self.winfo_rooty()))
-            master.draggedParticipant.draw(self.rel, self.font, self, cursorPos[0], cursorPos[0]+132, cursorPos[1], cursorPos[1] + 136)
+            master.draggedParticipant.draw(self.rel, self.font, self, cursorPos[0], cursorPos[0]+self.deskDimensions[0], cursorPos[1], cursorPos[1]+self.deskDimensions[1])
         if isinstance(master.draggedSeat, data.Seat):
             master.draggedSeat.draw(self, mdata.scale)
         for seat in mdata.seats:

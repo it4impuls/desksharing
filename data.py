@@ -209,9 +209,9 @@ class Assignment():
 
 class Exporter():
     def __init__(self, data:Data, tfont:Font, time:date, rel) -> None:
-        font = Font(family='Arial', size=20*data.scale)
-        ifont = ImageFont.truetype('arial.ttf', 20*data.scale)
-        room = data.roomImage
+        font = Font(family='Arial', size=int(20*data.scale))
+        ifont = ImageFont.truetype('arial.ttf', int(20*data.scale))
+        room = data.roomImage.copy()
         for seat in data.seats:
             assert isinstance(seat, Seat)
             room.alpha_composite(seat.img.rotate(90*seat.rot), (seat.x1, seat.y1))
