@@ -2,6 +2,7 @@ from datetime import date, timedelta
 from tkinter.font import Font
 from PIL import ImageOps, ImageTk, Image, ImageDraw, ImageFont
 import tkinter as tk
+import view
 from os import path
 rootDir = path.dirname(path.abspath(__file__))
 
@@ -10,8 +11,9 @@ class Data():
         self.participants = []
         self.seats = []
         self.assignments = []
-        self.roomImage = None
-        self.scale = 1
+        self.roomFile = ""
+        self.roomImage:Image.Image
+        self.scale = float(1)
     def stringToDate(self, string):
         string = str(string)
         if string.count('.') == 2:
@@ -113,11 +115,12 @@ class Data():
             elif not collisionBegin and collisionEnd:
                 assignment.end = beginDate - timedelta(days=1)
     def removeParticipant(self, number=None, participant = None):
-        if number!=None:
+        if isinstance(number, int):
             for assignment in self.participants[number].assignments:
                 assignment.seat.assignments.remove(assignment)
                 self.assignments.remove(assignment)
-        self.participants.remove(self.participants[number])
+            if isinstance(participant, Participant):
+                self.participants.remove(self.participants[number])
         
     def removeParticipantFromSeat(self, participant, newSeat, beginDate, endDate):
         beginDate = self.stringToDate(beginDate)
@@ -190,7 +193,7 @@ class Seat():
     def doAssignmentsByTime(self, beginDate, endDate, func):
         for assignment in iter(self.assignments):
             func(assignment, beginDate, endDate)
-    def draw(self, canvas:tk.Canvas, scale = 1):
+    def draw(self, canvas:view.Roommap, scale = 1.0):
         img = self.img.rotate(self.rot*90,resample=Image.NEAREST)
         self.image_resized=ImageTk.PhotoImage(ImageOps.scale(img, canvas.rel * scale))
         self.img_id = canvas.create_image((self.x1)*canvas.rel,(self.y1)*canvas.rel, image=self.image_resized, anchor=tk.NW)

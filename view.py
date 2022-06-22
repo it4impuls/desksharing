@@ -91,8 +91,8 @@ class View(tk.Tk):
         Args:
             event (tk.Event): Automatically get send with tk bindings
         """
-        if event.data.num in [1, 3]:    #leftclick or rightclick
-            seat = self.config.data.getSeat(event.data.x, event.data.y)
+        if event.data.num in [1, 3]:    # type: ignore #leftclick or rightclick
+            seat = self.config.data.getSeat(event.data.x, event.data.y)  # type: ignore
             if isinstance(seat, data.Seat):
                 if self.edit_room:
                     self.draggedSeat = seat
@@ -112,7 +112,7 @@ class View(tk.Tk):
         Args:
             event (tk.Event): Automatically get send with tk bindings
         """
-        newSeat = self.config.data.getSeat(event.data.x, event.data.y)
+        newSeat = self.config.data.getSeat(event.data.x, event.data.y)  # type: ignore
         x,y = self.winfo_pointerxy()
         if isinstance(self.draggedSeat, data.Seat):
             if self.mainframe.winfo_containing(x,y) == self.mainframe.roommap:
@@ -136,19 +136,19 @@ class View(tk.Tk):
                 self.draggedTo = newSeat
                 # assign to new seat
                 if newSeat.getParticipant(self.showDate) == self.draggedParticipant:
-                    if event.data.num == 1:     #leftclick
+                    if event.data.num == 1:     # type: ignore #leftclick
                         self.showSeat = newSeat
                         self.draggedParticipant = None
-                    elif event.data.num == 3:   #rightclick
+                    elif event.data.num == 3:   # type: ignore #rightclick
                         self.showSeat = newSeat
                         self.draggedParticipant = None
                         #Kontextmenü
                         pass
                 else:
-                    if event.data.num == 1:     #leftclick
-                        tk.Event.data = [1, self.draggedParticipant.entryDate, self.draggedParticipant.exitDate, False]
+                    if event.data.num == 1:     # type: ignore #leftclick
+                        tk.Event.data = [1, self.draggedParticipant.entryDate, self.draggedParticipant.exitDate, False]  # type: ignore
                         self.event_generate('<<MoveParticipant>>')
-                    elif event.data.num == 3:   #rightclick
+                    elif event.data.num == 3:   # type: ignore #rightclick
                         self.draggedTo = newSeat
                         self.event_generate('<<OpenMoveParticipantDialog>>')
         else:
@@ -161,13 +161,16 @@ class View(tk.Tk):
             event (tk.Event): Automatically get send with tk bindings
         """
         if isinstance(self.draggedParticipant, data.Participant):
-            newSeat = self.config.data.getSeat(event.data.x, event.data.y)
-            if isinstance(newSeat, data.Seat):
-                self.draggedTo = newSeat
-                tk.Event.data = [1, self.draggedParticipant.entryDate, self.draggedParticipant.exitDate, False]
-                self.event_generate('<<MoveParticipant>>')
-            # self.showSeat = None
-            self.draggedParticipant = None
+            try:
+                newSeat = self.config.data.getSeat(event.data.x, event.data.y)  # type: ignore
+                if isinstance(newSeat, data.Seat):
+                    self.draggedTo = newSeat
+                    tk.Event.data = [1, self.draggedParticipant.entryDate, self.draggedParticipant.exitDate, False]  # type: ignore
+                    self.event_generate('<<MoveParticipant>>')
+                # self.showSeat = None
+                self.draggedParticipant = None
+            except:
+                pass
     def onEsc(self, event:tk.Event):
         """ reset dragged participents when ESC is hit
 
@@ -186,7 +189,7 @@ class View(tk.Tk):
         Args:
             event (tk.Event): Automatically get send with tk bindings
         """
-        if isinstance(self.draggedSeat, data.Seat):
+        if isinstance(self.draggedSeat, data.Seat) and isinstance(self.draggedSeat.img_id, str):
             self.mainframe.roommap.delete(self.draggedSeat.img_id)
             self.draggedSeat.rot+=1
             if self.draggedSeat.rot>3:
@@ -241,15 +244,15 @@ class View(tk.Tk):
     def closeAddParticipantDialog(self):
         self.addParticipantDialog.destroy()
     def addParticipant(self, event:tk.Event):
-        isAdded = self.config.data.addParticipant(event.data[0], event.data[1], event.data[2], event.data[3], note=event.data[4])
+        isAdded = self.config.data.addParticipant(event.data[0], event.data[1], event.data[2], event.data[3], note=event.data[4])  # type: ignore
         if isinstance(isAdded, data.Error):
             messagebox.showerror("Error", isAdded.message)
         else:
             self.closeAddParticipantDialog()
             self.mainframe.sidebar.refresh()
     def openMoveParticipantDialog(self, event:tk.Event):
-        newSeat = self.config.data.getSeat(event.data.x, event.data.y)
-        if isinstance(newSeat, data.data.Seat):
+        newSeat = self.config.data.getSeat(event.data.x, event.data.y)  # type: ignore
+        if isinstance(newSeat, data.data.Seat):  # type: ignore
             self.moveParticipantDialog = MoveParticipantDialog(self.draggedParticipant)
     def closeMoveParticipantDialog(self):
         self.moveParticipantDialog.destroy()
@@ -258,10 +261,10 @@ class View(tk.Tk):
         Args:
             event (tk.Event): Automatically get send with tk bindings
         """
-        if event.data[0] == 1:  # leftclick
+        if event.data[0] == 1:  # type: ignore # leftclick
             # event.data[0] = startDate independent of participent join date, event.data[1] = endDate independent of participent leave date, 
-            self.config.data.moveParticipant(self.draggedParticipant, self.draggedTo, event.data[1], event.data[2])
-        if event.data[3]:
+            self.config.data.moveParticipant(self.draggedParticipant, self.draggedTo, event.data[1], event.data[2])  # type: ignore
+        if event.data[3]:  # type: ignore
             self.closeMoveParticipantDialog()
         self.draggedParticipant = None
         self.draggedTo = None
@@ -296,9 +299,9 @@ class View(tk.Tk):
                                                 initialdir = path.join(rootDir, 'saves'))
         self.config.saveData(savefile)
     def openEditParticipantDialog(self, event:tk.Event):
-        self.editParticipantDialog = EditParticipantDialog(event.data)
+        self.editParticipantDialog = EditParticipantDialog(event.data)  # type: ignore
     def editParticipant(self, event:tk.Event):
-        isEdited = self.config.data.editParticipant(event.data[0], event.data[1], event.data[2], event.data[3], event.data[4], note=event.data[5])
+        isEdited = self.config.data.editParticipant(event.data[0], event.data[1], event.data[2], event.data[3], event.data[4], note=event.data[5])  # type: ignore
         if isinstance(isEdited, data.Error):
             messagebox.showerror("Error", isEdited.message)
         else:
@@ -342,37 +345,37 @@ class View(tk.Tk):
 class MainFrame(tk.Frame):
     def __init__(self, master):
         super().__init__(master)
-        
         self.master = master
+        assert isinstance(self.master, View)
         self.roommap = Roommap(self)
-        # self.menubar = MenuBar(self)
+        # self.menubar = MenuBar(self.master)
         self.toolbar = ToolBar(self.master)
         self.toolbar.addSeatBttn.pack_forget()
         self.toolbar.addSeatTTP = CreateToolTip(self.toolbar.addSeatBttn, "Neuen Sitzplatz hinzufügen")
         self.sidebar = SideBar(self.master)
-class MenuBar(tk.Menu): #disabled
-    def __init__(self, master):
-        super().__init__(master)
-        self.master.config(menu=self)
+# class MenuBar(tk.Menu): #disabled
+#     def __init__(self, master):
+#         super().__init__(master)
+#         self.master.config(menu=self)
 
-        fileMenu = tk.Menu(self, tearoff=0)
-        fileMenu.add_command(label='New', underline=0, command=lambda: self.master.event_generate('<<NewFile>>'))
-        fileMenu.add_command(label='Öffnen', underline=0, command=lambda: self.master.event_generate('<<OpenOpenDialog>>'))
-        fileMenu.add_command(label='Speichern', underline=0)
-        fileMenu.add_command(label='Speichern unter', underline=5, command=lambda: self.master.event_generate('<<OpenSaveAsDialog>>'))
-        fileMenu.add_command(label='Beenden', underline=0, command=self.quit)
-        self.add_cascade(label='Datei', underline=0, menu=fileMenu)
+#         fileMenu = tk.Menu(self, tearoff=0)
+#         fileMenu.add_command(label='New', underline=0, command=lambda: self.master.event_generate('<<NewFile>>'))
+#         fileMenu.add_command(label='Öffnen', underline=0, command=lambda: self.master.event_generate('<<OpenOpenDialog>>'))
+#         fileMenu.add_command(label='Speichern', underline=0)
+#         fileMenu.add_command(label='Speichern unter', underline=5, command=lambda: self.master.event_generate('<<OpenSaveAsDialog>>'))
+#         fileMenu.add_command(label='Beenden', underline=0, command=self.quit)
+#         self.add_cascade(label='Datei', underline=0, menu=fileMenu)
 
-        editMenu = tk.Menu(self, tearoff=0)
-        self.add_cascade(label='Bearbeiten', underline=0, menu=editMenu)
+#         editMenu = tk.Menu(self, tearoff=0)
+#         self.add_cascade(label='Bearbeiten', underline=0, menu=editMenu)
 
-        viewMenu = tk.Menu(self, tearoff=0)
-        self.add_cascade(label='Ansicht', underline=0, menu=viewMenu)
+#         viewMenu = tk.Menu(self, tearoff=0)
+#         self.add_cascade(label='Ansicht', underline=0, menu=viewMenu)
 
-        helpMenu = tk.Menu(self, tearoff=0)
-        self.add_cascade(label='?', underline=0, menu=helpMenu)
+#         helpMenu = tk.Menu(self, tearoff=0)
+#         self.add_cascade(label='?', underline=0, menu=helpMenu)
 class ToolBar(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master:View):
         super().__init__(master, bd=1, relief=tk.RAISED)
         self.newFileBttn = self.addButton('doc_new_icon&24.png', '<<NewFile>>')
         self.newFileTTP = CreateToolTip(self.newFileBttn, "Neuer Raum. Erschaffe einen neuern Raum mit einem Bild als Vorlage")
@@ -382,7 +385,7 @@ class ToolBar(tk.Frame):
         self.saveRoomTTP = CreateToolTip(self.saveRoomBttn, "Raum speichern. Speicher diesen Raum.")
         self.editBttn = self.addButton('wrench_icon&24.png', '<<EditRoom>>')
         self.editTTP = CreateToolTip(self.editBttn, "Raum bearbeiten. Ermöglicht das Bewegen und Erschaffen neuer Sitze")
-        
+        self.addSeatTTP:CreateToolTip
         ttk.Separator(self, orient=tk.VERTICAL).pack(side=tk.LEFT, fill='y')
         self.addPartiBttn = self.addButton('doc_plus_icon&24.png', '<<OpenAddParticipantDialog>>')
         self.addPartiTTP = CreateToolTip(self.addPartiBttn, "Neuen Teilnehmer hinzufügen")
@@ -407,19 +410,20 @@ class ToolBar(tk.Frame):
         self.pack(side=tk.TOP, fill=tk.X)
         self.update()
         
-    def addButton(self, iconFilename, eventName):
+    def addButton(self, iconFilename, eventName) -> tk.Button:
         icon = ImageTk.PhotoImage(Image.open(path.join(iconDir, iconFilename)))
         button = tk.Button(self, image=icon, relief=tk.FLAT, command=lambda: self.event_generate(eventName))
-        button.image = icon
+        setattr(button, "image", icon)
         button.pack(side=tk.LEFT, padx=2, pady=1)
         return button
     def applyDate(self, event:tk.Event):
+        assert isinstance(self.master, View)
         self.master.showDate = self.master.config.data.stringToDate(self.dateText.get_date())
         self.focus_set()
         self.master.draw()
 
     def onRelease(self, event:tk.Event):
-        if isinstance(self.master.draggedSeat, data.Seat):
+        if isinstance(self.master, View) and isinstance(self.master.draggedSeat, data.Seat):
             self.master.draggedSeat = None
             self.master.draw()
 class SideBar(tk.Frame):
@@ -450,41 +454,47 @@ class SideBar(tk.Frame):
         self.table.pack(side=tk.TOP, fill=tk.X)
         self.pack(side=tk.RIGHT, fill=tk.Y)
 
-
     def refresh(self):
+        """ Recreate the table
+        """
         for row in self.table.get_children():
             self.table.delete(row)
-        
+        assert isinstance(self.master, View)
         for i in range(len(self.master.config.data.participants)):
-            self.table.insert('', 'end', i, values=((self.master.config.data.participants[i].lastName + ', ' + self.master.config.data.participants[i].firstName), self.master.config.data.participants[i].entryDate.strftime('%d.%m.%Y'), self.master.config.data.participants[i].exitDate.strftime('%d.%m.%Y')))
+            self.table.insert('', 'end', str(i), values=((self.master.config.data.participants[i].lastName + ', ' + self.master.config.data.participants[i].firstName), self.master.config.data.participants[i].entryDate.strftime('%d.%m.%Y'), self.master.config.data.participants[i].exitDate.strftime('%d.%m.%Y')))
         if self.master.showSeat != None:
             for i in range(len(self.master.showSeat.assignments)):
-                self.table.insert('', 'end', i, values=((self.master.showSeat.assignments[i].participant.lastName + ', ' + self.master.showSeat.assignments[i].participant.firstName), self.master.showSeat.assignments[i].begin.strftime('%d.%m.%Y'), self.master.showSeat.assignments[i].end.strftime('%d.%m.%Y')))
+                self.table.insert('', 'end', str(i), values=((self.master.showSeat.assignments[i].participant.lastName + ', ' + self.master.showSeat.assignments[i].participant.firstName), self.master.showSeat.assignments[i].begin.strftime('%d.%m.%Y'), self.master.showSeat.assignments[i].end.strftime('%d.%m.%Y')))
     def onClick(self, event:tk.Event):
+        assert isinstance(self.master, View)
         if self.table.identify_row(event.y) != '':
             clickedOn = int(self.table.identify_row(event.y))
             self.master.draggedParticipant = self.master.config.data.participants[clickedOn]
         else:
             self.master.draggedParticipant = None
     def onRelease(self, event:tk.Event):
-        event.x = (event.x_root-self.master.mainframe.roommap.winfo_rootx())/self.master.mainframe.roommap.rel
-        event.y = (event.y_root-self.master.mainframe.roommap.winfo_rooty())/self.master.mainframe.roommap.rel
-        tk.Event.data = event
+        assert isinstance(self.master, View)
+        event.x = (event.x_root-self.master.mainframe.roommap.winfo_rootx())/self.master.mainframe.roommap.rel  # type: ignore
+        event.y = (event.y_root-self.master.mainframe.roommap.winfo_rooty())/self.master.mainframe.roommap.rel  # type: ignore
+        tk.Event.data = event  # type: ignore
         self.event_generate('<<ReleasedFromSidebar>>')
     def onDoubleClick(self, event:tk.Event):
+        assert isinstance(self.master, View)
         if self.table.identify_row(event.y) != '':
             clickedOn = int(self.table.identify_row(event.y))
             if self.master.showSeat == None:
-                tk.Event.data = self.master.config.data.participants[clickedOn]
+                tk.Event.data = self.master.config.data.participants[clickedOn]  # type: ignore
             else:
-                tk.Event.data = self.master.showSeat.assignments[clickedOn].participant
+                tk.Event.data = self.master.showSeat.assignments[clickedOn].participant  # type: ignore
             self.event_generate('<<OpenEditParticipantDialog>>')
         else:
             self.master.draggedParticipant = None
 class Roommap(tk.Canvas):
     def __init__(self, master):
         super().__init__(master)
+        
         self.master = master
+        assert isinstance(self.master.master, View)
         if self.master.master.config.data.roomImage == None:
             self.master.master.config.data.roomImage = Image.open(path.join(imgDir, 'rooms', 'ITloft.png')).convert()
         self.rel = 1
@@ -511,15 +521,13 @@ class Roommap(tk.Canvas):
         if isinstance(master.draggedParticipant, data.Participant):
             cursorPos = (   round(self.winfo_pointerx()-self.winfo_rootx()), 
                         round(self.winfo_pointery()-self.winfo_rooty()))
-            master.draggedParticipant.draw(self.rel, self.font, self, cursorPos[0], cursorPos[0]+self.deskDimensions[0], cursorPos[1], cursorPos[1]+self.deskDimensions[1])
+            master.draggedParticipant.draw(self.rel, self.font, self, cursorPos[0], cursorPos[0]+master.deskDimensions[0], cursorPos[1], cursorPos[1]+master.deskDimensions[1])
         if isinstance(master.draggedSeat, data.Seat):
             master.draggedSeat.draw(self, mdata.scale)
         for seat in mdata.seats:
             for assignment in seat.assignments:
                 if assignment.begin <= master.showDate and assignment.end >= master.showDate:
                     self.drawParticipant(seat, assignment.participant)
-        # items = self.find_all()
-        # pass
 
     def refresh(self):
         self.draw()
@@ -533,7 +541,7 @@ class Roommap(tk.Canvas):
                 root = self.coords(dragged_participent.textIDs[0])
                 if len(root)==0:
                     root=cursorPos
-                root[1] += self.font.cget("size")
+                root[1] += self.font.cget("size")  # type: ignore
                 reMove = (cursorPos[0]-root[0], cursorPos[1]-root[1])
                 for txtID in dragged_participent.textIDs:
                     self.move(txtID, reMove[0], reMove[1])
@@ -546,14 +554,14 @@ class Roommap(tk.Canvas):
                 y2 = (cursorPos[1]+(y_len/2))/self.rel
                 dragged_participent.draw(self.rel, self.font, self, x1,x2,y1,y2)
             
-        elif isinstance(dragged_seat, data.Seat):
+        elif isinstance(dragged_seat, data.Seat) and isinstance(dragged_seat.img_id, str):
             root = self.coords(dragged_seat.img_id)
             if len(root) == 0:
                 root=cursorPos
             width=dragged_seat.x2-dragged_seat.x1
             height=dragged_seat.y2-dragged_seat.y1
-            root[0] = (root[0] + width*self.rel/2)
-            root[1] = (root[1] + height*self.rel/2)
+            root[0] = (root[0] + width*self.rel/2)  # type: ignore
+            root[1] = (root[1] + height*self.rel/2)  # type: ignore
 
 
             reMove = (cursorPos[0]-root[0], cursorPos[1]-root[1])
@@ -573,19 +581,20 @@ class Roommap(tk.Canvas):
                 self.create_rectangle(bb)
 
     def drawParticipant(self, seat, participant):
+        assert isinstance(self.master.master, View)
         participant.draw(self.rel, self.font, self, seat.x1, seat.x2, seat.y1, seat.y2)
         if self.master.master.showSeat != None:
             super().create_rectangle(self.master.master.showSeat.x1*self.rel, self.master.master.showSeat.y1*self.rel, self.master.master.showSeat.x2*self.rel, self.master.master.showSeat.y2*self.rel, width=2, outline='#FF0000')
 
     def onClick(self, event:tk.Event):
-        event.x = event.x/self.rel
-        event.y = event.y/self.rel
-        tk.Event.data = event
+        event.x = event.x/self.rel  # type: ignore
+        event.y = event.y/self.rel  # type: ignore
+        tk.Event.data = event  # type: ignore
         self.event_generate('<<ClickedOnRoommap>>')
     def onRelease(self, event:tk.Event):
-        event.x = event.x/self.rel
-        event.y = event.y/self.rel
-        tk.Event.data = event
+        event.x = event.x/self.rel  # type: ignore
+        event.y = event.y/self.rel  # type: ignore
+        tk.Event.data = event  # type: ignore
         self.event_generate('<<ReleasedFromRoomMap>>')
 
 class AddParticipantDialog(tk.Toplevel):
@@ -593,7 +602,7 @@ class AddParticipantDialog(tk.Toplevel):
         super().__init__()
         self.title('Neuer Teilnehmer')
         self.grab_set()
-        self.resizable(height=0, width=0)
+        self.resizable(height=False, width=False)
         _width = 30
 
         firstNameLabel = tk.Label(self, text='Vorname', justify=tk.LEFT)
@@ -634,14 +643,14 @@ class AddParticipantDialog(tk.Toplevel):
         cancelButton = tk.Button(self, text='Abbrechen', command=self.destroy)
         cancelButton.grid(row=5, column=1, pady=1)
     def tryAddParticipant(self, firstName, lastName, entryDate, exitDate, note=''):
-        tk.Event.data = [firstName, lastName, entryDate, exitDate, note]
+        tk.Event.data = [firstName, lastName, entryDate, exitDate, note]  # type: ignore
         self.event_generate('<<AddParticipant>>')
 class EditParticipantDialog(tk.Toplevel):
     def __init__(self, participant):
         super().__init__()
         self.title('Teilnehmer bearbeiten')
         self.grab_set()
-        self.resizable(height=0, width=0)
+        self.resizable(height=False, width=False)
         _width = 30
 
         firstNameLabel = tk.Label(self, text='Vorname', justify=tk.LEFT)
@@ -685,14 +694,14 @@ class EditParticipantDialog(tk.Toplevel):
         cancelButton = tk.Button(self, text='Abbrechen', command=self.destroy)
         cancelButton.grid(row=5, column=1)   
     def tryEditParticipant(self, participant, firstName, lastName, entryDate, exitDate, note=''):
-        tk.Event.data = [participant, firstName, lastName, entryDate, exitDate, note]
+        tk.Event.data = [participant, firstName, lastName, entryDate, exitDate, note]  # type: ignore
         self.event_generate('<<EditParticipant>>')     
 class MoveParticipantDialog(tk.Toplevel):
     def __init__(self, participant):
         super().__init__()
         self.title('Teilnehmer umziehen')
         self.grab_set()
-        self.resizable(height=0, width=0)
+        self.resizable(height=False, width=False)
         self.checked = tk.IntVar()
 
         tk.Radiobutton(self, text='Umsetzen', padx=20, variable=self.checked, value=1, command=self.activateEntries).grid(row=0, column=0)
@@ -731,7 +740,7 @@ class MoveParticipantDialog(tk.Toplevel):
         self.beginField['state'] = tk.DISABLED
         self.endField['state'] = tk.DISABLED
     def tryMoveParticipant(self):
-        tk.Event.data = [self.checked.get(), self.beginField.get(), self.endField.get(), True]
+        tk.Event.data = [self.checked.get(), self.beginField.get(), self.endField.get(), True]  # type: ignore
         self.event_generate('<<MoveParticipant>>')
 
 class CreateToolTip(object):

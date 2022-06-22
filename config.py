@@ -28,13 +28,16 @@ class Config():
                         self.dateFormat = parts[2].replace('\'', '')
         file.closed
     def saveConfig(self):
-        with open(path.join(rootDir, 'config.ini'), 'w') as file:
-            file.writelines([
-                'lastSavefile = \'' + self.lastSavefile + '\'\n',
-                'dateFormat = \'' + self.dateFormat + '\''
-            ])
-        file.closed
+        if isinstance(self.lastSavefile, str):
+            with open(path.join(rootDir, 'config.ini'), 'w') as file:
+                file.writelines([
+                    'lastSavefile = \'' + self.lastSavefile + '\'\n',
+                    'dateFormat = \'' + self.dateFormat + '\''
+                ])
+            file.closed
     def saveData(self, fpath):
+        assert isinstance(self.data, data.Data)
+        assert isinstance(self.data.roomFile, str)
         with open(fpath, 'wb') as file:
             file.write(str('DeSh').encode('utf-8'))
             file.write(int(len(self.data.roomFile)).to_bytes(2, 'big'))
@@ -78,8 +81,8 @@ class Config():
             with open(path, 'rb') as file:
                 if(file.read(4).decode('utf-8') == 'DeSh'):
                     roomlen = int.from_bytes(file.read(2), 'big')
-                    roomFile = file.read(roomlen).decode('utf-8')
-                    new_data.roomImage = Image.open(os.path.join(rootDir, 'img', 'rooms', roomFile)).convert()
+                    new_data.roomFile = file.read(roomlen).decode('utf-8')
+                    new_data.roomImage = Image.open(os.path.join(rootDir, 'img', 'rooms', new_data.roomFile)).convert()
                     lenSeats = int.from_bytes(file.read(2), 'big')
                     lenParticipants = int.from_bytes(file.read(2), 'big')
                     lenAssignments = int.from_bytes(file.read(2), 'big')
