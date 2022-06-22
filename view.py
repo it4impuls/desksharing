@@ -276,11 +276,13 @@ class View(tk.Tk):
         Args:
             event (tk.Event): Automatically get send with tk bindings
         """
-        NewFile = filedialog.askopenfilename(   filetypes=(('save files','*.png'),('all files','*.*')),
+        newFile = filedialog.askopenfilename(   filetypes=(('save files','*.png'),('all files','*.*')),
                                                 initialdir = path.join(rootDir, 'img', 'rooms'))
+        if newFile == "":
+            return
         self.config.data = data.Data()
-        self.config.data.roomFile = NewFile
-        self.config.data.roomImage = Image.open(path.join(imgDir, 'rooms', NewFile)).convert()
+        self.config.data.roomFile = newFile
+        self.config.data.roomImage = Image.open(path.join(imgDir, 'rooms', newFile)).convert()
         self.showSeat = None
         self.draw()
         self.mainframe.sidebar.refresh()

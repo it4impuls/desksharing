@@ -254,6 +254,7 @@ class ITLOFT(Data):
     def __init__(self):
         super().__init__()
         self.roomImage = Image.open(path.join(rootDir, 'img', 'rooms', 'ITloft.png')).convert()
+        self.roomFile = "IT-Loft.png"
         self.seats.append(Seat(161, 362, 255, 497, 3))
         self.seats.append(Seat(258, 362, 352, 497, 1))
         self.seats.append(Seat(161, 596, 255, 731, 3))

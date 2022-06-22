@@ -41,7 +41,7 @@ class Config():
         with open(fpath, 'wb') as file:
             file.write(str('DeSh').encode('utf-8'))
             file.write(int(len(self.data.roomFile)).to_bytes(2, 'big'))
-            file.write(str(self.data.roomFile).encode('utf-8'))
+            file.write(str(self.data.roomFile).encode('utf-16')[2:])
             file.write(int(len(self.data.seats)).to_bytes(2, 'big'))
             file.write(int(len(self.data.participants)).to_bytes(2, 'big'))
             file.write(int(len(self.data.assignments)).to_bytes(2, 'big'))
@@ -81,7 +81,9 @@ class Config():
             with open(path, 'rb') as file:
                 if(file.read(4).decode('utf-8') == 'DeSh'):
                     roomlen = int.from_bytes(file.read(2), 'big')
-                    new_data.roomFile = file.read(roomlen).decode('utf-8')
+                    new_data.roomFile = file.read(2*roomlen).decode('utf-16')
+                    if roomlen == 0:
+                        new_data.roomFile = "IT-Loft.png"
                     new_data.roomImage = Image.open(os.path.join(rootDir, 'img', 'rooms', new_data.roomFile)).convert()
                     lenSeats = int.from_bytes(file.read(2), 'big')
                     lenParticipants = int.from_bytes(file.read(2), 'big')
@@ -121,7 +123,8 @@ class Config():
             self.data = new_data
             
         except Exception as e:
-            print("Can't load File")
+            print("Can't load File:")
+            print(e)
             self.data = data.ITLOFT()
         
         self.lastSavefile = path
