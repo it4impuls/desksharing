@@ -52,9 +52,11 @@ class View(tk.Tk):
         self.bind('<<EditRoom>>', self.editRoom)
         self.bind('<<AddSeat>>', self.addSeat)
         self.bind('<<Export>>', self.onExport)
+
         self.bind_all('<KeyPress>', self.onKeyPress)
         self.bind_all('<KeyRelease>', self.onKeyRelease)
         self.bind_all('<Control-s>', self.openSaveAsDialog)
+        self.bind_all('<Control-n>', self.newFile)
 
         self.oldWidth = self.winfo_width()
         self.oldHeight = self.winfo_height()
@@ -386,7 +388,6 @@ class ToolBar(tk.Frame):
         self.master.showDate = self.master.config.data.stringToDate(self.dateText.get_date())
         self.focus_set()
         self.master.draw()
-
     def onRelease(self, event:tk.Event):
         if isinstance(self.master, View) and isinstance(self.master.draggedSeat, data.Seat):
             self.master.draggedSeat = None
@@ -493,10 +494,8 @@ class Roommap(tk.Canvas):
             for assignment in seat.assignments:
                 if assignment.begin <= master.showDate and assignment.end >= master.showDate:
                     self.drawParticipant(seat, assignment.participant)
-
     def refresh(self):
         self.draw()
-
     def update_dragged(self, dragged_participent, dragged_seat, seats_temp):
         
         assert isinstance(self.master.master, View)
@@ -552,13 +551,11 @@ class Roommap(tk.Canvas):
                 dragged_seat.y2 = round(bb[3]/self.rel)
                 
                 self.create_rectangle(bb)
-
     def drawParticipant(self, seat, participant):
         assert isinstance(self.master.master, View)
         participant.draw(self.rel, self.font, self, seat.x1, seat.x2, seat.y1, seat.y2)
         if self.master.master.showSeat != None:
             super().create_rectangle(self.master.master.showSeat.x1*self.rel, self.master.master.showSeat.y1*self.rel, self.master.master.showSeat.x2*self.rel, self.master.master.showSeat.y2*self.rel, width=2, outline='#FF0000')
-
     def onClick(self, event:tk.Event):
         event.x = event.x/self.rel  # type: ignore
         event.y = event.y/self.rel  # type: ignore

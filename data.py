@@ -167,7 +167,7 @@ class Participant():
         self.textIDs.append(canvas.create_text(x, yEntry, text=self.entryDate.strftime('%d.%m.%Y'), font=font, fill='#00FF00'))
         self.textIDs.append(canvas.create_text(x, yExit, text=self.exitDate.strftime('%d.%m.%Y'), font=font, fill='#FF0000'))
 class Seat():
-    def __init__(self, x1, y1, x2, y2, rot=0):
+    def __init__(self, x1, y1, x2, y2, rot:int=0):
         self.x1 = x1
         self.y1 = y1
         self.x2 = x2
@@ -205,7 +205,7 @@ class Assignment():
         seat.assignments.append(self)
 
 class Exporter():
-    def __init__(self, data:Data, tfont:Font, time:date, filename) -> None:
+    def __init__(self, data:Data, tfont:Font, time:date, filename:str) -> None:
         font = Font(family='Arial', size=int(20*data.scale))
         ifont = ImageFont.truetype('arial.ttf', int(20*data.scale))
         room = data.roomImage.copy()
