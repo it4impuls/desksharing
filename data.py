@@ -14,6 +14,7 @@ class Data():
         self.roomFile = ""
         self.roomImage:Image.Image
         self.scale = float(1)
+        
     def stringToDate(self, string):
         string = str(string)
         if string.count('.') == 2:
@@ -181,7 +182,7 @@ class Seat():
 
     def getParticipant(self, date):
         for assignment in iter(self.assignments):
-            if assignment.begin < date and assignment.end > date:
+            if assignment.begin <= date and assignment.end >= date:
                 return assignment.participant
         return None
     def getAssignmentsByTime(self, beginDate, endDate):
@@ -254,7 +255,7 @@ class ITLOFT(Data):
     def __init__(self):
         super().__init__()
         self.roomImage = Image.open(path.join(rootDir, 'img', 'rooms', 'ITloft.png')).convert()
-        self.roomFile = "IT-Loft.png"
+        self.roomFile = "ITloft.png"
         self.seats.append(Seat(161, 362, 255, 497, 3))
         self.seats.append(Seat(258, 362, 352, 497, 1))
         self.seats.append(Seat(161, 596, 255, 731, 3))

@@ -30,6 +30,7 @@ class View(tk.Tk):
         self.edit_room = False
         self.originalPosition  = (0,0,0,0)
         self.deskDimensions = (132, 136)
+        self.shiftPressed = False
 
         self.mainframe = MainFrame(self)
         
@@ -51,13 +52,8 @@ class View(tk.Tk):
         self.bind('<<EditRoom>>', self.editRoom)
         self.bind('<<AddSeat>>', self.addSeat)
         self.bind('<<Export>>', self.onExport)
-        self.bind_all('<Escape>', self.onEsc)
-        self.bind_all('<r>', self.onR)
-        self.bind_all('<+>', self.onPlus)
-        self.bind_all('<KP_Add>', self.onPlus)
-        self.bind_all('<minus>', self.onMinus)
-        self.bind_all('<KP_Subtract>', self.onMinus)
-        self.bind_all('<Delete>', self.onDel)
+        self.bind_all('<KeyPress>', self.onKeyPress)
+        self.bind_all('<KeyRelease>', self.onKeyRelease)
 
         self.oldWidth = self.winfo_width()
         self.oldHeight = self.winfo_height()
@@ -171,64 +167,47 @@ class View(tk.Tk):
                 self.draggedParticipant = None
             except:
                 pass
-    def onEsc(self, event:tk.Event):
-        """ reset dragged participents when ESC is hit
 
-        Args:
-            event (tk.Event): Automatically get send with tk bindings
-        """
-        if isinstance(self.draggedParticipant, data.Participant):
-            self.draggedParticipant = None
-            self.mainframe.roommap.draw()
-        if isinstance(self.draggedSeat, data.Seat):
-            self.draggedSeat = None
-            self.mainframe.roommap.draw()
-    def onR(self, event:tk.Event):
-        """ Rotate seat if one is dragged
-
-        Args:
-            event (tk.Event): Automatically get send with tk bindings
-        """
-        if isinstance(self.draggedSeat, data.Seat) and isinstance(self.draggedSeat.img_id, int):
-            self.mainframe.roommap.delete(self.draggedSeat.img_id)
-            self.draggedSeat.rot+=1
-            if self.draggedSeat.rot>3:
-                self.draggedSeat.rot = 0
-            self.draggedSeat.draw(self.mainframe.roommap, self.config.data.scale)
-    def onPlus(self, event:tk.Event):
-        """ increase seat size when roomedit is active
-
-        Args:
-            event (tk.Event): Automatically get send with tk bindings
-        """
-        if self.edit_room:
-            self.config.data.scale *= 1.1
-            self.mainframe.roommap.draw()
-    def onMinus(self, event:tk.Event):
-        """ decrease seat size when roomedit is active
-
-        Args:
-            event (tk.Event): Automatically get send with tk bindings
-        """
-        if self.edit_room:
-            self.config.data.scale /= 1.1
-            self.mainframe.roommap.draw()
-    def onDel(self, event:tk.Event):
-        """ Remove seat if it is dragged
-
-        Args:
-            event (tk.Event): Automatically get send with tk bindings
-        """
-        if isinstance(self.draggedSeat, data.Seat):     # remove seat
-            if self.draggedSeat in self.config.data.seats:
-                for assignment in self.draggedSeat.assignments:
-                    assert isinstance(assignment, data.Assignment)
-                    assert isinstance(assignment.participant, data.Participant)
-                    assignment.participant.assignments.remove(assignment)
-                    self.config.data.assignments.remove(assignment)
-                    self.draggedSeat.assignments.remove(assignment)
-                self.config.data.seats.remove(self.draggedSeat)
+    def onKeyPress(self, event:tk.Event):
+        if event.keysym == "Shift_L":
+            self.shiftPressed = True
+        elif event.keysym == "Escape":
+            if isinstance(self.draggedParticipant, data.Participant):
+                self.draggedParticipant = None
+                self.mainframe.roommap.draw()
+            if isinstance(self.draggedSeat, data.Seat):
                 self.draggedSeat = None
+                self.mainframe.roommap.draw()
+        elif event.keysym == "r":
+            if isinstance(self.draggedSeat, data.Seat) and isinstance(self.draggedSeat.img_id, int):
+                self.mainframe.roommap.delete(self.draggedSeat.img_id)
+                self.draggedSeat.rot+=1
+                if self.draggedSeat.rot>3:
+                    self.draggedSeat.rot = 0
+                self.draggedSeat.draw(self.mainframe.roommap, self.config.data.scale)
+        elif event.keysym == "+" or event.keysym == "KP_Add":
+            if self.edit_room:
+                self.config.data.scale *= 1.1
+                self.mainframe.roommap.draw()
+        elif event.keysym == "minus" or event.keysym == "KP_Subtract":
+            if self.edit_room:
+                self.config.data.scale /= 1.1
+                self.mainframe.roommap.draw()
+        elif event.keysym == "Delete":
+            if isinstance(self.draggedSeat, data.Seat):     # remove seat
+                if self.draggedSeat in self.config.data.seats:
+                    for assignment in self.draggedSeat.assignments:
+                        assert isinstance(assignment, data.Assignment)
+                        assert isinstance(assignment.participant, data.Participant)
+                        assignment.participant.assignments.remove(assignment)
+                        self.config.data.assignments.remove(assignment)
+                        self.draggedSeat.assignments.remove(assignment)
+                    self.config.data.seats.remove(self.draggedSeat)
+                    self.draggedSeat = None
+
+    def onKeyRelease(self, event:tk.Event):
+        if event.keysym == "Shift_L":
+            self.shiftPressed = False
     def onExport(self, event:tk.Event):
         """ Export current room to png.
 
