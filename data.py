@@ -13,7 +13,7 @@ class Data():
         self.assignments = []
         self.roomFile = ""
         self.roomImage:Image.Image
-        self.scale = float(1)
+        self.scale = 1.0
         
     def stringToDate(self, string):
         string = str(string)
@@ -166,9 +166,6 @@ class Participant():
         self.textIDs.append(canvas.create_text(x, yNote, text=self.note, font=font, fill='#EEEEEE'))
         self.textIDs.append(canvas.create_text(x, yEntry, text=self.entryDate.strftime('%d.%m.%Y'), font=font, fill='#00FF00'))
         self.textIDs.append(canvas.create_text(x, yExit, text=self.exitDate.strftime('%d.%m.%Y'), font=font, fill='#FF0000'))
-        
-        
-
 class Seat():
     def __init__(self, x1, y1, x2, y2, rot=0):
         self.x1 = x1
@@ -198,7 +195,6 @@ class Seat():
         img = self.img.rotate(self.rot*90,resample=Image.NEAREST)
         self.image_resized=ImageTk.PhotoImage(ImageOps.scale(img, canvas.rel * scale))
         self.img_id = canvas.create_image((self.x1)*canvas.rel,(self.y1)*canvas.rel, image=self.image_resized, anchor=tk.NW)
-
 class Assignment():
     def __init__(self, participant, seat, begin, end):
         self.participant = participant
@@ -243,7 +239,6 @@ class Exporter():
 
 
         room.save(filename)
-
 
 class Error():
     def __init__(self, message):

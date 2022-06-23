@@ -121,7 +121,6 @@ class Config():
                         endYear = int.from_bytes(file.read(2), 'big')
                         new_data.assignments.append(data.Assignment(participant, seat, date(beginYear, beginMonth, beginDay), date(endYear, endMonth, endDay)))
             self.data = new_data
-            
         except Exception as e:
             print("Can't load File:")
             print(e)

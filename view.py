@@ -54,6 +54,7 @@ class View(tk.Tk):
         self.bind('<<Export>>', self.onExport)
         self.bind_all('<KeyPress>', self.onKeyPress)
         self.bind_all('<KeyRelease>', self.onKeyRelease)
+        self.bind_all('<Control-s>', self.openSaveAsDialog)
 
         self.oldWidth = self.winfo_width()
         self.oldHeight = self.winfo_height()
@@ -167,7 +168,6 @@ class View(tk.Tk):
                 self.draggedParticipant = None
             except:
                 pass
-
     def onKeyPress(self, event:tk.Event):
         if event.keysym == "Shift_L":
             self.shiftPressed = True
