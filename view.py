@@ -204,7 +204,6 @@ class View(tk.Tk):
                         self.draggedSeat.assignments.remove(assignment)
                     self.config.data.seats.remove(self.draggedSeat)
                     self.draggedSeat = None
-
     def onKeyRelease(self, event:tk.Event):
         if event.keysym == "Shift_L":
             self.shiftPressed = False
@@ -499,9 +498,14 @@ class Roommap(tk.Canvas):
         self.draw()
 
     def update_dragged(self, dragged_participent, dragged_seat, seats_temp):
-        snapSize = 10*self.rel
-        cursorPos = (   round((self.winfo_pointerx()-self.winfo_rootx())/snapSize)*snapSize, 
-                        round((self.winfo_pointery()-self.winfo_rooty())/snapSize)*snapSize)
+        
+        assert isinstance(self.master.master, View)
+        if self.master.master.shiftPressed:
+            snapSize = 1
+        else:
+            snapSize = 10*self.rel
+        cursorPos = [  round(self.winfo_pointerx()-self.winfo_rootx()), 
+                        round(self.winfo_pointery()-self.winfo_rooty())]
         if isinstance(dragged_participent, data.Participant):
             if len(dragged_participent.textIDs) > 0:
                 root = self.coords(dragged_participent.textIDs[0])
@@ -524,6 +528,9 @@ class Roommap(tk.Canvas):
             root = self.coords(dragged_seat.img_id)
             if len(root) == 0:
                 root=cursorPos
+            if not self.master.master.shiftPressed:
+                root[0] = round(root[0]/snapSize)*snapSize  # type: ignore
+                root[1] = round(root[1]/snapSize)*snapSize  # type: ignore
             width=dragged_seat.x2-dragged_seat.x1
             height=dragged_seat.y2-dragged_seat.y1
             root[0] = (root[0] + width*self.rel/2)  # type: ignore
@@ -531,18 +538,18 @@ class Roommap(tk.Canvas):
 
 
             reMove = (cursorPos[0]-root[0], cursorPos[1]-root[1])
-            if any(i > snapSize or snapSize < -i for i in reMove):
-                if (reMove[0] > snapSize or snapSize < -reMove[0]):
-                    self.move(dragged_seat.img_id, reMove[0], 0)
-                if (reMove[1] > snapSize or snapSize < -reMove[1]):
-                    self.move(dragged_seat.img_id, 0, reMove[1])
+
+            if not (-snapSize < reMove[0] < snapSize):
+                self.move(dragged_seat.img_id, reMove[0], 0)
+            if not (-snapSize < reMove[1] < snapSize):
+                self.move(dragged_seat.img_id, 0, reMove[1])
                 
                 root = self.coords(dragged_seat.img_id)
                 bb = self.bbox(dragged_seat.img_id)
-                dragged_seat.x1 = (bb[0]/self.rel)
-                dragged_seat.y1 = (bb[1]/self.rel)
-                dragged_seat.x2 = (bb[2]/self.rel)
-                dragged_seat.y2 = (bb[3]/self.rel)
+                dragged_seat.x1 = round(bb[0]/self.rel)
+                dragged_seat.y1 = round(bb[1]/self.rel)
+                dragged_seat.x2 = round(bb[2]/self.rel)
+                dragged_seat.y2 = round(bb[3]/self.rel)
                 
                 self.create_rectangle(bb)
 
