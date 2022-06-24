@@ -266,6 +266,8 @@ class View(tk.Tk):
     def openOpenDialog(self, event:tk.Event):
         loadfile = filedialog.askopenfilename(  filetypes=(('save files','*.sav'),('all files','*.*')), 
                                                 initialdir = path.join(rootDir, 'saves'))
+        if loadfile == "":
+            return
         self.config.loadData(loadfile)
         self.showSeat = None
         self.draw()
