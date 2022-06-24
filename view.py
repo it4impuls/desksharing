@@ -15,9 +15,7 @@ class View(tk.Tk):
     def __init__(self):
         super().__init__()
         super().focus_set()
-
         self.config = config.Config()
-
         self.title('DeskShare')
 
         self.showSeat = None
@@ -31,10 +29,8 @@ class View(tk.Tk):
         self.originalPosition  = (0,0,0,0)
         self.deskDimensions = (132, 136)
         self.shiftPressed = False
-
         self.mainframe = MainFrame(self)
         
-        # self.draw()
         self.bind('<Configure>', self.resize)
         self.bind('<<OpenAddParticipantDialog>>', self.openAddParticipantDialog)
         self.bind_all('<<AddParticipant>>', self.addParticipant)
