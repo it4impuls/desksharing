@@ -377,9 +377,9 @@ class ToolBar(tk.Frame):
         self.editTTP = CreateToolTip(self.editBttn, "Raum bearbeiten. Ermöglicht das Bewegen und Erschaffen neuer Sitze")
         self.addSeatTTP:CreateToolTip
         ttk.Separator(self, orient=tk.VERTICAL).pack(side=tk.LEFT, fill='y')
-        self.addPartiBttn = self.addButton('doc_plus_icon&24.png', '<<OpenAddParticipantDialog>>')
+        self.addPartiBttn = self.addButton('add-user.png', '<<OpenAddParticipantDialog>>')
         self.addPartiTTP = CreateToolTip(self.addPartiBttn, "Neuen Teilnehmer hinzufügen")
-        self.remPartiBttn = self.addButton('doc_minus_icon&24.png', '<<RemoveParticipant>>')
+        self.remPartiBttn = self.addButton('remove-user.png', '<<RemoveParticipant>>')
         self.remPartiTTP = CreateToolTip(self.remPartiBttn, "Teilnehmer löschen. Wenn ein Sitz ausgewählt ist, wird der momentane Teilnehmer von Sitz gelöscht,\
                              ansonsten wird der ausgewählte Teilnehmer aus der Liste gelöscht")
         ttk.Separator(self, orient=tk.VERTICAL).pack(side=tk.LEFT, fill='y')
@@ -387,7 +387,7 @@ class ToolBar(tk.Frame):
         self.datetxt = self.dateText =  DateEntry(self, width=10, date_pattern = 'dd.mm.yyyy')
         self.dateTTP = CreateToolTip(self.datetxt, "Datum auswählen. Wähle, für welches Datum die Raum-zuteilung angezeigt werden soll")
         self.dateText.pack(side=tk.LEFT, padx=2, pady=1)
-        self.addSeatBttn = self.addButton('user_icon&24.png', '<<AddSeat>>')
+        self.addSeatBttn = self.addButton('add-computer.png', '<<AddSeat>>')
 
         self.exportbttn = self.addButton('clipboard_past_icon&24.png', '<<Export>>')
         
@@ -401,7 +401,9 @@ class ToolBar(tk.Frame):
         self.update()
         
     def addButton(self, iconFilename, eventName) -> tk.Button:
-        icon = ImageTk.PhotoImage(Image.open(path.join(iconDir, iconFilename)))
+        img = Image.open(path.join(iconDir, iconFilename))
+        img.thumbnail((24,24), Image.ANTIALIAS)
+        icon = ImageTk.PhotoImage(img)
         button = tk.Button(self, image=icon, relief=tk.FLAT, command=lambda: self.event_generate(eventName))
         setattr(button, "image", icon)
         button.pack(side=tk.LEFT, padx=2, pady=1)

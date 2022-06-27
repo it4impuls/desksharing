@@ -1,0 +1,42 @@
+- Fixed Bog where you couldnt remove Participents from list
+- change gitignore
+- Fixed bug where when a Seat is selected participents in the list could not get modified added ask to save changes on close
+- rm png
+- fixed Exporter with new font
+- (hopefully) fixed path issues in bat
+- added participent moves with Seat fixed bug where only one axis created new rect on Seat move
+- reinstaller if different user wants to run it from the same location
+- rm pic
+- Fixed bug where thenote got loaded into the Seat changed Font to segoe ui removed date shown added first name shown
+- Added start.bat installing required dependencies fixed drag participent bug
+- fixed empty string on cancled open file dialog
+- Readme.txt
+- update the Rooms
+- clean
+- Ctrl + S keybind
+- added grid snapping exception while pressing shift
+- Cleaned up keypress logic fixed cant move when part start or enddate is the same as view date
+- allow utf-16 chars in savefile
+- added new pictures for itlofft and FA-office
+- rem unneccecary .png's
+- Made Pylance typeChecking compatible
+- added ,ore docstring/comments
+- Added dialog for exporter filename
+- added some docstrings
+- Del deletes Sitz, fixed sized for rotated/new Seats
+- added Exporter
+- fixed Tooltip assignments
+- added Tooltip
+- save roomImage in config.data
+- Added scaling seats, default paths for file open
+- File select on new Room
+- switched to abspath instead of './'
+- implemented snapping
+- Rem old comments
+- added calendar to edit Participent
+- Drag to sidebar to remove from seat, renamed and commented for clarity
+- Seats are Canvas items, so that they can be moved
+- Fixed Stackoverflow
+- Implemented Drag'n'drop and failsafe for corrupted saves
+- split desk images from roompic to individual Seats
+- Initiol Commit. Original from Network
