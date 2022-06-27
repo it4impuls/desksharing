@@ -141,7 +141,7 @@ class Data():
         self.assignments.append(Assignment(participant, newSeat, beginDate, endDate))
 
 class Participant():
-    def __init__(self, firstName, lastName, entryDate, exitDate, seat=None, note:str=''):
+    def __init__(self, firstName:str, lastName:str, entryDate:date, exitDate:date, seat=None, note:str=''):
         self.firstName = firstName
         self.lastName = lastName
         self.entryDate = entryDate
@@ -159,8 +159,8 @@ class Participant():
         yfirstname = y1*rel+font.cget('size')*0 + height
         yName = y1*rel+font.cget('size')*1.5 + height
         yNote = y1*rel+font.cget('size')*3.5 + height
-        yEntry = y1*rel+font.cget('size')*2.5 + height
-        yExit = y1*rel+font.cget('size')*3.5 + height
+        # yEntry = y1*rel+font.cget('size')*4.5 + height
+        # yExit = y1*rel+font.cget('size')*5.5 + height
 
         self.textIDs = []
         self.textIDs.append(canvas.create_text(x, yfirstname, text=self.firstName, font=font, fill='#EEEEEE'))
@@ -207,10 +207,10 @@ class Assignment():
         seat.assignments.append(self)
 
 class Exporter():
-    def __init__(self, data:Data, tfont:Font, time:date, filename:str) -> None:
-        font = Font(family='Arial', size=int(20*data.scale))
-        ifont = ImageFont.truetype('arial.ttf', int(20*data.scale))
+    def __init__(self, data:Data, font:Font, time:date, filename:str) -> None:
+        ifont = ImageFont.truetype('segoeuib.ttf', int(18*data.scale))
         room = data.roomImage.copy()
+        room = room.convert('RGBA')
         assert isinstance(room, Image.Image)
         for seat in data.seats:
             assert isinstance(seat, Seat)
@@ -224,20 +224,23 @@ class Exporter():
                     participant = assignment.participant
                     assert isinstance(participant, Participant)
                     x = seat.x1 + (seat.x2-seat.x1)/2
-                    height =  ((seat.y2-seat.y1)/2) - (font.cget('size')*2)
-                    yName = seat.y1+font.cget('size')*0.5 + height
-                    yNote = seat.y1+font.cget('size')*1.5 + height
-                    yEntry = seat.y1+font.cget('size')*2.5 + height
-                    yExit = seat.y1+font.cget('size')*3.5 + height
+                    height =  ((seat.y2-seat.y1)/2) - (ifont.size*2)
+                    yfirstname = seat.y1+ifont.size*0 + height
+                    yName = seat.y1+ifont.size*1.5 + height
+                    yNote = seat.y1+ifont.size*3.5 + height
+                    # yEntry = y1*rel+font.cget('size')*4.5 + height
+                    # yExit = y1*rel+font.cget('size')*5.5 + height
 
+                    w, h = roomDraw.textsize(participant.firstName, font=ifont)
+                    roomDraw.text((x-w/2,yfirstname), participant.firstName, font=ifont, fill='#EEEEEE')
                     w, h = roomDraw.textsize(participant.lastName, font=ifont)
                     roomDraw.text((x-w/2,yName), participant.lastName, font=ifont, fill='#EEEEEE')
                     w, h = roomDraw.textsize(participant.note, font=ifont)
-                    roomDraw.text((x-w/2,yNote), participant.note, font=ifont, fill='#EEEEEE')
-                    w, h = roomDraw.textsize(participant.entryDate.strftime('%d.%m.%Y'), font=ifont)
-                    roomDraw.text((x-w/2,yEntry), participant.entryDate.strftime('%d.%m.%Y'), font=ifont, fill='#00FF00')
-                    w, h = roomDraw.textsize(participant.exitDate.strftime('%d.%m.%Y'), font=ifont)
-                    roomDraw.text((x-w/2,yExit), participant.exitDate.strftime('%d.%m.%Y'), font=ifont, fill='#FF0000')
+                    roomDraw.text((x-w/2,yNote), participant.note, font=ifont, fill='#EDE772')
+                    # w, h = roomDraw.textsize(participant.entryDate.strftime('%d.%m.%Y'), font=ifont)
+                    # roomDraw.text((x-w/2,yEntry), participant.entryDate.strftime('%d.%m.%Y'), font=ifont, fill='#00FF00')
+                    # w, h = roomDraw.textsize(participant.exitDate.strftime('%d.%m.%Y'), font=ifont)
+                    # roomDraw.text((x-w/2,yExit), participant.exitDate.strftime('%d.%m.%Y'), font=ifont, fill='#FF0000')
 
 
         room.save(filename)
