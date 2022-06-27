@@ -1,5 +1,5 @@
 import data
-from datetime import date, timedelta
+from datetime import date
 import os
 from os import path
 from PIL import Image

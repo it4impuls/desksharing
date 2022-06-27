@@ -29,8 +29,10 @@ class View(tk.Tk):
         self.originalPosition  = (0,0,0,0)
         self.deskDimensions = (132, 136)
         self.shiftPressed = False
+        self.changed = False
         self.mainframe = MainFrame(self)
         
+        self.protocol("WM_DELETE_WINDOW", self.onClosing)
         self.bind('<Configure>', self.resize)
         self.bind('<<OpenAddParticipantDialog>>', self.openAddParticipantDialog)
         self.bind_all('<<AddParticipant>>', self.addParticipant)
@@ -217,12 +219,24 @@ class View(tk.Tk):
                                             defaultextension='.png', 
                                             initialdir = rootDir)
         data.Exporter(self.config.data, self.mainframe.roommap.font, self.showDate, saveAs)
+    def onClosing(self):
+        if self.changed:
+            mb= messagebox.askyesnocancel("Beenden", "Sie haben ungespeicherte Änderungen, wollen Sie diese Speichern?")
+            if mb == True:
+                self.event_generate('<<OpenSaveAsDialog>>')
+            elif mb == False:
+                self.destroy()
+            else:
+                return
+        else:
+            self.destroy()
     def openAddParticipantDialog(self, event:tk.Event):
         self.addParticipantDialog = AddParticipantDialog()
     def closeAddParticipantDialog(self):
         self.addParticipantDialog.destroy()
     def addParticipant(self, event:tk.Event):
         isAdded = self.config.data.addParticipant(event.data[0], event.data[1], event.data[2], event.data[3], note=event.data[4])  # type: ignore
+        self.changed = True
         if isinstance(isAdded, data.Error):
             messagebox.showerror("Error", isAdded.message)
         else:
@@ -246,6 +260,7 @@ class View(tk.Tk):
             self.closeMoveParticipantDialog()
         self.draggedParticipant = None
         self.draggedTo = None
+        self.changed = True
         self.draw()
     def newFile(self, event:tk.Event):
         """ Create a new room.
@@ -262,6 +277,7 @@ class View(tk.Tk):
         self.config.data.roomFile = newFile
         self.config.data.roomImage = Image.open(path.join(imgDir, 'rooms', newFile)).convert()
         self.showSeat = None
+        self.changed = True
         self.draw()
         self.mainframe.sidebar.refresh()
         self.mainframe.roommap.refresh()
@@ -287,6 +303,7 @@ class View(tk.Tk):
                                                 initialdir = path.join(rootDir, 'saves'))
         if savefile != "":
             self.config.saveData(savefile)
+            self.changed = False
     def openEditParticipantDialog(self, event:tk.Event):
         self.editParticipantDialog = EditParticipantDialog(event.data)  # type: ignore
     def editParticipant(self, event:tk.Event):
@@ -309,6 +326,7 @@ class View(tk.Tk):
             return
         self.draw()
         self.mainframe.sidebar.refresh()
+        self.changed = True
     def editRoom(self, event:tk.Event):
         bttn = event.widget.editBttn
         assert isinstance(bttn, tk.Button)
@@ -325,12 +343,15 @@ class View(tk.Tk):
                       (self.winfo_pointery()-self.winfo_rooty()))
         self.draggedSeat = data.Seat(cursorPos[0], cursorPos[1], cursorPos[0]+self.deskDimensions[0], cursorPos[1]+self.deskDimensions[1])
         self.draggedSeat.draw(self.mainframe.roommap, self.config.data.scale)
+
+        self.changed = True
     def removeParticpantFromSeat(self, participent):
         if isinstance(participent, data.Participant):
             participent.doAssignmentsByTime(participent.entryDate,participent.entryDate,self.config.data.removeAssignment, True)
             for iid in participent.textIDs:
                 self.mainframe.roommap.delete(iid)
             participent.textIDs = []
+            self.changed = True
 
 class MainFrame(tk.Frame):
     def __init__(self, master):
@@ -449,10 +470,7 @@ class SideBar(tk.Frame):
         assert isinstance(self.master, View)
         if self.table.identify_row(event.y) != '':
             clickedOn = int(self.table.identify_row(event.y))
-            if self.master.showSeat == None:
-                tk.Event.data = self.master.config.data.participants[clickedOn]  # type: ignore
-            else:
-                tk.Event.data = self.master.showSeat.assignments[clickedOn].participant  # type: ignore
+            tk.Event.data = self.master.config.data.participants[clickedOn]  # type: ignore
             self.event_generate('<<OpenEditParticipantDialog>>')
         else:
             self.master.draggedParticipant = None
