@@ -91,6 +91,7 @@ class View(tk.Tk):
             if isinstance(seat, data.Seat):
                 if self.edit_room:
                     self.draggedSeat = seat
+                    
                     self.originalPosition = (self.draggedSeat.x1, self.draggedSeat.y1, self.draggedSeat.x2, self.draggedSeat.y2)
 
                 else:
@@ -524,6 +525,8 @@ class Roommap(tk.Canvas):
                 dragged_participent.draw(self.rel, self.font, self, x1,x2,y1,y2)
             
         elif isinstance(dragged_seat, data.Seat) and isinstance(dragged_seat.img_id, int):
+            participent = dragged_seat.getParticipant(self.master.master.showDate)
+            
             root = self.coords(dragged_seat.img_id)
             if len(root) == 0:
                 root=cursorPos
@@ -535,14 +538,20 @@ class Roommap(tk.Canvas):
             root[0] = (root[0] + width*self.rel/2)  # type: ignore
             root[1] = (root[1] + height*self.rel/2)  # type: ignore
 
-
             reMove = (cursorPos[0]-root[0], cursorPos[1]-root[1])
 
             if not (-snapSize < reMove[0] < snapSize):
                 self.move(dragged_seat.img_id, reMove[0], 0)
+                if isinstance(participent, data.Participant):
+                    for iid in participent.textIDs:
+                        self.move(iid, reMove[0], 0)
             if not (-snapSize < reMove[1] < snapSize):
                 self.move(dragged_seat.img_id, 0, reMove[1])
-                
+                if isinstance(participent, data.Participant):
+                    for iid in participent.textIDs:
+                        self.move(iid, 0, reMove[1])
+                        
+            if not (-snapSize < reMove[0] < snapSize) or not (-snapSize < reMove[1] < snapSize):
                 root = self.coords(dragged_seat.img_id)
                 bb = self.bbox(dragged_seat.img_id)
                 dragged_seat.x1 = round(bb[0]/self.rel)
