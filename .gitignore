@@ -2,6 +2,7 @@
 Thumbs.db
 sudoku.csv
 /*.png
+*.sav
 
 # Python
 # Byte-compiled / optimized / DLL files
