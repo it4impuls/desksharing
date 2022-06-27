@@ -55,7 +55,7 @@ class Data():
             return Error('Austrittsdatum: ') + exitDate
         self.participants.append(Participant(firstName, lastName, entryDate, exitDate, seat, note))
         return None  
-    def editParticipant(self, participant, firstName, lastName, entryDate, exitDate, note=''):
+    def editParticipant(self, participant, firstName:str, lastName:str, entryDate, exitDate, note=''):
         entryDate = self.stringToDate(entryDate)
         if isinstance(entryDate, Error):
             return Error('Eintrittsdatum: ') + entryDate
@@ -141,7 +141,7 @@ class Data():
         self.assignments.append(Assignment(participant, newSeat, beginDate, endDate))
 
 class Participant():
-    def __init__(self, firstName, lastName, entryDate, exitDate, seat=None, note=''):
+    def __init__(self, firstName, lastName, entryDate, exitDate, seat=None, note:str=''):
         self.firstName = firstName
         self.lastName = lastName
         self.entryDate = entryDate
@@ -156,16 +156,18 @@ class Participant():
     def draw(self, rel, font, canvas:tk.Canvas, x1,x2,y1,y2):
         x = x1*rel+(x2*rel-x1*rel)/2
         height =  ((y2-y1)/2)*rel - (font.cget('size')*2)
-        yName = y1*rel+font.cget('size')*0.5 + height
-        yNote = y1*rel+font.cget('size')*1.5 + height
+        yfirstname = y1*rel+font.cget('size')*0 + height
+        yName = y1*rel+font.cget('size')*1.5 + height
+        yNote = y1*rel+font.cget('size')*3.5 + height
         yEntry = y1*rel+font.cget('size')*2.5 + height
         yExit = y1*rel+font.cget('size')*3.5 + height
 
         self.textIDs = []
+        self.textIDs.append(canvas.create_text(x, yfirstname, text=self.firstName, font=font, fill='#EEEEEE'))
         self.textIDs.append(canvas.create_text(x, yName, text=self.lastName, font=font, fill='#EEEEEE'))
-        self.textIDs.append(canvas.create_text(x, yNote, text=self.note, font=font, fill='#EEEEEE'))
-        self.textIDs.append(canvas.create_text(x, yEntry, text=self.entryDate.strftime('%d.%m.%Y'), font=font, fill='#00FF00'))
-        self.textIDs.append(canvas.create_text(x, yExit, text=self.exitDate.strftime('%d.%m.%Y'), font=font, fill='#FF0000'))
+        self.textIDs.append(canvas.create_text(x, yNote, text=self.note, font=font, fill='#EDE772'))
+        # self.textIDs.append(canvas.create_text(x, yEntry, text=self.entryDate.strftime('%d.%m.%Y'), font=font, fill='#00FF00'))
+        # self.textIDs.append(canvas.create_text(x, yExit, text=self.exitDate.strftime('%d.%m.%Y'), font=font, fill='#FF0000'))
 class Seat():
     def __init__(self, x1, y1, x2, y2, rot:int=0):
         self.x1 = x1

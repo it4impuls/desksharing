@@ -109,7 +109,7 @@ class Config():
                         exitYear = int.from_bytes(file.read(2), 'big')
                         lenNote = int.from_bytes(file.read(1), 'big')
                         note = file.read(2*lenNote).decode('utf-16')
-                        new_data.participants.append(data.Participant(firstName, lastName, date(entryYear, entryMonth, entryDay), date(exitYear, exitMonth, exitDay), note))
+                        new_data.participants.append(data.Participant(firstName, lastName, date(entryYear, entryMonth, entryDay), date(exitYear, exitMonth, exitDay), note=note))
                     for i in range(lenAssignments):
                         seat = new_data.seats[int.from_bytes(file.read(1), 'big')]
                         participant = new_data.participants[int.from_bytes(file.read(1), 'big')]

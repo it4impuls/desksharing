@@ -295,6 +295,7 @@ class View(tk.Tk):
         else:
             self.closeEditParticipantDialog()
             self.mainframe.sidebar.refresh()
+            self.mainframe.roommap.draw()
     def closeEditParticipantDialog(self):
         self.editParticipantDialog.destroy()
     def removeParticpantFromList(self, event:tk.Event):
@@ -478,7 +479,7 @@ class Roommap(tk.Canvas):
         self.rel = max(min(relW, relH), 0.1)
         self.roomImgResized = ImageTk.PhotoImage(ImageOps.scale(mdata.roomImage, self.rel))
         self.create_image(0, 0, anchor=tk.NW, image=self.roomImgResized)
-        self.font = font.Font(family='Helvetica', size=int(max(20*self.rel, 0)))
+        self.font = font.Font(family='segoe ui', size=int(max(16*self.rel, 0)), weight="bold")
 
         for seat in mdata.seats:
             seat.draw(self, scale = mdata.scale)           # seperate, so that all seats are drawn before the nametags, so nametags are layered above.
