@@ -1,6 +1,9 @@
 @ECHO OFF
-IF EXIST venv\ GOTO runner
-ELSE GOTO installer
+IF EXIST venv\ (
+	GOTO runner
+)ELSE (
+GOTO installer
+)
 
 
 :installer
