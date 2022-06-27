@@ -322,6 +322,7 @@ class View(tk.Tk):
         elif len(self.mainframe.sidebar.table.selection())>0:
             for i in self.mainframe.sidebar.table.selection():
                 self.config.data.removeParticipant(int(i))
+                self.mainframe.sidebar.table.delete(i)
         else:
             return
         self.draw()

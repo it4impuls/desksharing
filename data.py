@@ -120,8 +120,9 @@ class Data():
             for assignment in self.participants[number].assignments:
                 assignment.seat.assignments.remove(assignment)
                 self.assignments.remove(assignment)
-            if isinstance(participant, Participant):
-                self.participants.remove(self.participants[number])
+            self.participants.remove(self.participants[number])
+        if isinstance(participant, Participant):
+            self.participants.remove(participant)
         
     def removeParticipantFromSeat(self, participant, newSeat, beginDate, endDate):
         beginDate = self.stringToDate(beginDate)

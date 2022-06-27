@@ -3,6 +3,8 @@ Thumbs.db
 sudoku.csv
 /*.png
 *.sav
+/sync.bat
+/TODO.txt
 
 # Python
 # Byte-compiled / optimized / DLL files
