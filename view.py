@@ -118,6 +118,7 @@ class View(tk.Tk):
                     self.config.data.seats.append(self.draggedSeat)
                     self.originalPosition  = (0,0,0,0)
                 self.draggedSeat = None
+                self.changed = True
             else:
                 self.draggedSeat.x1, self.draggedSeat.y1, self.draggedSeat.x2, self.draggedSeat.y2 = self.originalPosition
                 self.draggedSeat = None
@@ -402,7 +403,7 @@ class ToolBar(tk.Frame):
         
     def addButton(self, iconFilename, eventName) -> tk.Button:
         img = Image.open(path.join(iconDir, iconFilename))
-        img.thumbnail((24,24), Image.ANTIALIAS)
+        # img.thumbnail((24,24), Image.ANTIALIAS)
         icon = ImageTk.PhotoImage(img)
         button = tk.Button(self, image=icon, relief=tk.FLAT, command=lambda: self.event_generate(eventName))
         setattr(button, "image", icon)
