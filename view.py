@@ -164,6 +164,7 @@ class View(tk.Tk):
                     self.event_generate('<<MoveParticipant>>')
                 # self.showSeat = None
                 self.draggedParticipant = None
+                self.mainframe.roommap.draw()
             except:
                 pass
     def onKeyPress(self, event:tk.Event):
@@ -183,7 +184,7 @@ class View(tk.Tk):
                 if self.draggedSeat.rot>3:
                     self.draggedSeat.rot = 0
                 self.draggedSeat.draw(self.mainframe.roommap, self.config.data.scale)
-        elif event.keysym == "+" or event.keysym == "KP_Add":
+        elif event.keysym == "plus" or event.keysym == "KP_Add":
             if self.edit_room:
                 self.config.data.scale *= 1.1
                 self.mainframe.roommap.draw()
@@ -549,6 +550,8 @@ class Roommap(tk.Canvas):
                 dragged_seat.y2 = round(bb[3]/self.rel)
                 
                 self.create_rectangle(bb)
+            # if isinstance(dragged_seat.getParticipant(self.master.master.showDate), data.Participant):
+            #     dragged_seat.getParticipant(self.master.master.showDate).
     def drawParticipant(self, seat, participant):
         assert isinstance(self.master.master, View)
         participant.draw(self.rel, self.font, self, seat.x1, seat.x2, seat.y1, seat.y2)
