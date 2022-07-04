@@ -45,7 +45,7 @@ class View(tk.Tk):
         self.bind('<<NewFile>>', self.newFile)
         self.bind('<<OpenEditParticipantDialog>>', self.openEditParticipantDialog)
         self.bind_all('<<EditParticipant>>', self.editParticipant)
-        self.bind('<<RemoveParticipant>>', self.removeParticpantFromList)
+        self.bind('<<RemoveParticipant>>', self.removeParticpant)
         self.bind('<<ReleasedFromSidebar>>', self.onReleasedFromSidebar)
         self.bind('<<EditRoom>>', self.editRoom)
         self.bind('<<AddSeat>>', self.addSeat)
@@ -119,6 +119,7 @@ class View(tk.Tk):
                     self.originalPosition  = (0,0,0,0)
                 self.draggedSeat = None
                 self.changed = True
+                self.showSeat = newSeat
             else:
                 self.draggedSeat.x1, self.draggedSeat.y1, self.draggedSeat.x2, self.draggedSeat.y2 = self.originalPosition
                 self.draggedSeat = None
@@ -198,15 +199,13 @@ class View(tk.Tk):
                 self.mainframe.roommap.draw()
         elif event.keysym == "Delete":
             if isinstance(self.draggedSeat, data.Seat):     # remove seat
-                if self.draggedSeat in self.config.data.seats:
-                    for assignment in self.draggedSeat.assignments:
-                        assert isinstance(assignment, data.Assignment)
-                        assert isinstance(assignment.participant, data.Participant)
-                        assignment.participant.assignments.remove(assignment)
-                        self.config.data.assignments.remove(assignment)
-                        self.draggedSeat.assignments.remove(assignment)
-                    self.config.data.seats.remove(self.draggedSeat)
-                    self.draggedSeat = None
+                self.config.data.removeSeat(self.draggedSeat)
+                self.draggedSeat = None
+            elif isinstance( self.showSeat, data.Seat) and self.edit_room:
+                self.config.data.removeSeat(self.showSeat)
+                self.mainframe.roommap.draw()
+            else:
+                self.event_generate('<<RemoveParticipant>>')
     def onKeyRelease(self, event:tk.Event):
         if event.keysym == "Shift_L":
             self.shiftPressed = False
@@ -236,11 +235,11 @@ class View(tk.Tk):
     def closeAddParticipantDialog(self):
         self.addParticipantDialog.destroy()
     def addParticipant(self, event:tk.Event):
-        isAdded = self.config.data.addParticipant(event.data[0], event.data[1], event.data[2], event.data[3], note=event.data[4])  # type: ignore
-        self.changed = True
+        isAdded = self.config.data.addParticipant(event.data[0], event.data[1], event.data[2], event.data[3], note=event.data[4], psf=event.data[5], fa=event.data[6])  # type: ignore
         if isinstance(isAdded, data.Error):
             messagebox.showerror("Error", isAdded.message)
         else:
+            self.changed = True
             self.closeAddParticipantDialog()
             self.mainframe.sidebar.refresh()
     def openMoveParticipantDialog(self, event:tk.Event):
@@ -308,7 +307,7 @@ class View(tk.Tk):
     def openEditParticipantDialog(self, event:tk.Event):
         self.editParticipantDialog = EditParticipantDialog(event.data)  # type: ignore
     def editParticipant(self, event:tk.Event):
-        isEdited = self.config.data.editParticipant(event.data[0], event.data[1], event.data[2], event.data[3], event.data[4], note=event.data[5])  # type: ignore
+        isEdited = self.config.data.editParticipant(event.data[0], event.data[1], event.data[2], event.data[3], event.data[4], note=event.data[5], psf=event.data[6], fa=event.data[7])  # type: ignore
         if isinstance(isEdited, data.Error):
             messagebox.showerror("Error", isEdited.message)
         else:
@@ -317,9 +316,11 @@ class View(tk.Tk):
             self.mainframe.roommap.draw()
     def closeEditParticipantDialog(self):
         self.editParticipantDialog.destroy()
-    def removeParticpantFromList(self, event:tk.Event):
+    def removeParticpant(self, event:tk.Event):
         if isinstance(self.showSeat, data.Seat) and isinstance(self.showSeat.getParticipant(self.showDate), data.Participant):
             self.removeParticpantFromSeat(self.showSeat.getParticipant(self.showDate))
+        # elif isinstance(self.draggedParticipant, data.Participant):
+
         elif len(self.mainframe.sidebar.table.selection())>0:
             for i in self.mainframe.sidebar.table.selection():
                 self.config.data.removeParticipant(int(i))
@@ -355,6 +356,7 @@ class View(tk.Tk):
             participent.textIDs = []
             self.changed = True
 
+
 class MainFrame(tk.Frame):
     def __init__(self, master):
         super().__init__(master)
@@ -368,29 +370,29 @@ class MainFrame(tk.Frame):
 class ToolBar(tk.Frame):
     def __init__(self, master:View):
         super().__init__(master, bd=1, relief=tk.RAISED)
-        self.newFileBttn = self.addButton('doc_new_icon&24.png', '<<NewFile>>')
-        self.newFileTTP = CreateToolTip(self.newFileBttn, "Neuer Raum. Erschaffe einen neuern Raum mit einem Bild als Vorlage")
-        self.openFileBttn = self.addButton('folder_open_icon&24.png', '<<OpenOpenDialog>>')
-        self.openFileTTP = CreateToolTip(self.openFileBttn, "Raum laden. lade einen bestehenden Raum")
-        self.saveRoomBttn = self.addButton('save_icon&24.png', '<<OpenSaveAsDialog>>')
-        self.saveRoomTTP = CreateToolTip(self.saveRoomBttn, "Raum speichern. Speicher diesen Raum.")
-        self.editBttn = self.addButton('wrench_icon&24.png', '<<EditRoom>>')
-        self.editTTP = CreateToolTip(self.editBttn, "Raum bearbeiten. Ermöglicht das Bewegen und Erschaffen neuer Sitze")
+        self.newFileBttn = self.addButton('doc_new_icon&24.png', '<<NewFile>>', "Neuer Raum. Erschaffe einen neuern Raum mit einem Bild als Vorlage")
+        # self.newFileTTP = CreateToolTip(self.newFileBttn, "Neuer Raum. Erschaffe einen neuern Raum mit einem Bild als Vorlage")
+        self.openFileBttn = self.addButton('folder_open_icon&24.png', '<<OpenOpenDialog>>', "Raum laden. lade einen bestehenden Raum")
+        # self.openFileTTP = CreateToolTip(self.openFileBttn, "Raum laden. lade einen bestehenden Raum")
+        self.saveRoomBttn = self.addButton('save_icon&24.png', '<<OpenSaveAsDialog>>', "Raum speichern. Speicher diesen Raum.")
+        # self.saveRoomTTP = CreateToolTip(self.saveRoomBttn, "Raum speichern. Speicher diesen Raum.")
+        self.editBttn = self.addButton('wrench_icon&24.png', '<<EditRoom>>', "Raum bearbeiten. Ermöglicht das Bewegen und Erschaffen neuer Sitze")
+        # self.editTTP = CreateToolTip(self.editBttn, "Raum bearbeiten. Ermöglicht das Bewegen und Erschaffen neuer Sitze")
         self.addSeatTTP:CreateToolTip
         ttk.Separator(self, orient=tk.VERTICAL).pack(side=tk.LEFT, fill='y')
-        self.addPartiBttn = self.addButton('add-user.png', '<<OpenAddParticipantDialog>>')
-        self.addPartiTTP = CreateToolTip(self.addPartiBttn, "Neuen Teilnehmer hinzufügen")
-        self.remPartiBttn = self.addButton('remove-user.png', '<<RemoveParticipant>>')
-        self.remPartiTTP = CreateToolTip(self.remPartiBttn, "Teilnehmer löschen. Wenn ein Sitz ausgewählt ist, wird der momentane Teilnehmer von Sitz gelöscht,\
-                             ansonsten wird der ausgewählte Teilnehmer aus der Liste gelöscht")
+        self.addPartiBttn = self.addButton('add-user.png', '<<OpenAddParticipantDialog>>', "Neuen Teilnehmer hinzufügen")
+        # self.addPartiTTP = CreateToolTip(self.addPartiBttn, "Neuen Teilnehmer hinzufügen")
+        self.remPartiBttn = self.addButton('remove-user.png', '<<RemoveParticipant>>', "Teilnehmer löschen. Wenn ein Sitz ausgewählt ist, wird der momentane Teilnehmer von Sitz gelöscht, ansonsten wird der ausgewählte Teilnehmer aus der Liste gelöscht")
+        # self.remPartiTTP = CreateToolTip(self.remPartiBttn)
         ttk.Separator(self, orient=tk.VERTICAL).pack(side=tk.LEFT, fill='y')
 
         self.datetxt = self.dateText =  DateEntry(self, width=10, date_pattern = 'dd.mm.yyyy')
         self.dateTTP = CreateToolTip(self.datetxt, "Datum auswählen. Wähle, für welches Datum die Raum-zuteilung angezeigt werden soll")
         self.dateText.pack(side=tk.LEFT, padx=2, pady=1)
-        self.addSeatBttn = self.addButton('add-computer.png', '<<AddSeat>>')
+        self.addSeatBttn = self.addButton('add-computer.png', '<<AddSeat>>', 'Neuen Sitz hinzufügen')
+        self.dateTTP = CreateToolTip(self.addSeatBttn, "Neuen Sitzplatz hinzufügen")
 
-        self.exportbttn = self.addButton('clipboard_past_icon&24.png', '<<Export>>')
+        self.exportbttn = self.addButton('clipboard_past_icon&24.png', '<<Export>>', 'Sitzplan als Bild exportieren')
         
         
         self.dateText.bind('<<DateEntrySelected>>', self.applyDate)
@@ -401,13 +403,16 @@ class ToolBar(tk.Frame):
         self.pack(side=tk.TOP, fill=tk.X)
         self.update()
         
-    def addButton(self, iconFilename, eventName) -> tk.Button:
+    def addButton(self, iconFilename, eventName, toolTipMessage = "") -> tk.Button:
         img = Image.open(path.join(iconDir, iconFilename))
         # img.thumbnail((24,24), Image.ANTIALIAS)
         icon = ImageTk.PhotoImage(img)
         button = tk.Button(self, image=icon, relief=tk.FLAT, command=lambda: self.event_generate(eventName))
         setattr(button, "image", icon)
         button.pack(side=tk.LEFT, padx=2, pady=1)
+        if toolTipMessage != "":
+            CreateToolTip(button, toolTipMessage)
+
         return button
     def applyDate(self, event:tk.Event):
         assert isinstance(self.master, View)
@@ -423,15 +428,19 @@ class SideBar(tk.Frame):
         super().__init__(master, bd=1, relief=tk.RAISED)
         self.bind('<<Button>>', self.onClick)
 
-        self.table = ttk.Treeview(self, columns=('Name', 'StartDate', 'EndDate'), selectmode='browse')
+        self.table = ttk.Treeview(self, columns=('Name', 'StartDate', 'EndDate', 'psf', 'fa'), selectmode='browse')
         self.table.column('#0', width=0, minwidth=0, stretch=tk.NO)
         self.table.column('Name', width=150, minwidth=150, stretch=tk.NO)
         self.table.column('StartDate', width=100, minwidth=100, stretch=tk.NO)
         self.table.column('EndDate', width=100, minwidth=100, stretch=tk.NO)
+        self.table.column('psf', width=100, minwidth=100, stretch=tk.NO)
+        self.table.column('fa', width=100, minwidth=100, stretch=tk.NO)
         
         self.table.heading('Name', text='Name', anchor=tk.W)
         self.table.heading('StartDate', text='Eintrittsdatum', anchor=tk.W)
         self.table.heading('EndDate', text='Austrittsdatum', anchor=tk.W)
+        self.table.heading('psf', text='PSF', anchor=tk.W)
+        self.table.heading('fa', text='Fachanleitung', anchor=tk.W)
 
         self.table.bind('<Button>', self.onClick)
         # Triggers everywhere if pressed on sidebar, doesnt trigger if pressed anywhere else for some reason
@@ -452,8 +461,10 @@ class SideBar(tk.Frame):
         for row in self.table.get_children():
             self.table.delete(row)
         assert isinstance(self.master, View)
-        for i in range(len(self.master.config.data.participants)):
-            self.table.insert('', 'end', str(i), values=((self.master.config.data.participants[i].lastName + ', ' + self.master.config.data.participants[i].firstName), self.master.config.data.participants[i].entryDate.strftime('%d.%m.%Y'), self.master.config.data.participants[i].exitDate.strftime('%d.%m.%Y')))
+        participants = self.master.config.data.participants
+        for i in range(len(participants)):
+            self.table.insert('', 'end', str(i), 
+                values=((participants[i].lastName + ', ' + participants[i].firstName), participants[i].entryDate.strftime('%d.%m.%Y'), participants[i].exitDate.strftime('%d.%m.%Y'), participants[i].psf, participants[i].fa))
         if self.master.showSeat != None:
             for i in range(len(self.master.showSeat.assignments)):
                 self.table.insert('', 'end', str(i), values=((self.master.showSeat.assignments[i].participant.lastName + ', ' + self.master.showSeat.assignments[i].participant.firstName), self.master.showSeat.assignments[i].begin.strftime('%d.%m.%Y'), self.master.showSeat.assignments[i].end.strftime('%d.%m.%Y')))
@@ -634,20 +645,32 @@ class AddParticipantDialog(tk.Toplevel):
         exitDateField.set_date(date(date.today().year+2, date.today().month, date.today().day+1))
         exitDateField.grid(row=3, column=1, pady=1)
 
+        psfLabel = tk.Label(self, text='PSF', justify=tk.LEFT)
+        psfLabel.grid(row=4, column=0, sticky=tk.W, pady=1)
+
+        psfField = tk.Entry(self, width=_width)
+        psfField.grid(row=4, column=1, pady=1)
+
+        faLabel = tk.Label(self, text='Fachanleitung', justify=tk.LEFT)
+        faLabel.grid(row=5, column=0, sticky=tk.W, pady=1)
+
+        faField = tk.Entry(self, width=_width)
+        faField.grid(row=5, column=1, pady=1)
+
         noteLabel = tk.Label(self, text='Notiz')
-        noteLabel.grid(row=4, column=0, sticky=tk.W, pady=1)
+        noteLabel.grid(row=6, column=0, sticky=tk.W, pady=1)
 
         noteField = tk.Entry(self, width=_width)
-        noteField.grid(row=4, column=1, pady=1)
+        noteField.grid(row=6, column=1, pady=1)
         
-        addCmd = lambda: self.tryAddParticipant(firstNameField.get(), lastNameField.get(), entryDateField.get(), exitDateField.get(), noteField.get())
+        addCmd = lambda: self.tryAddParticipant(firstNameField.get(), lastNameField.get(), entryDateField.get(), exitDateField.get(), psfField.get(), faField.get(), noteField.get())
         addButton = tk.Button(self, text='Hinzufügen', command=addCmd)
-        addButton.grid(row=5, column=0, pady=1)
+        addButton.grid(row=7, column=0, pady=1)
 
         cancelButton = tk.Button(self, text='Abbrechen', command=self.destroy)
-        cancelButton.grid(row=5, column=1, pady=1)
-    def tryAddParticipant(self, firstName, lastName, entryDate, exitDate, note=''):
-        tk.Event.data = [firstName, lastName, entryDate, exitDate, note]  # type: ignore
+        cancelButton.grid(row=7, column=1, pady=1)
+    def tryAddParticipant(self, firstName, lastName, entryDate, exitDate, psf, fa, note=''):
+        tk.Event.data = [firstName, lastName, entryDate, exitDate, note, psf, fa]  # type: ignore
         self.event_generate('<<AddParticipant>>')
 class EditParticipantDialog(tk.Toplevel):
     def __init__(self, participant):
@@ -685,20 +708,35 @@ class EditParticipantDialog(tk.Toplevel):
         exitDateField.set_date(participant.exitDate)
         exitDateField.grid(row=3, column=1)
 
+        psfLabel = tk.Label(self, text='PSF', justify=tk.LEFT)
+        psfLabel.grid(row=4, column=0, sticky=tk.W, pady=1)
+
+        psfField = tk.Entry(self, width=_width)
+        psfField.grid(row=4, column=1, pady=1)
+        psfField.insert('end', participant.psf)
+
+        faLabel = tk.Label(self, text='Fachanleitung', justify=tk.LEFT)
+        faLabel.grid(row=5, column=0, sticky=tk.W, pady=1)
+
+        faField = tk.Entry(self, width=_width)
+        faField.grid(row=5, column=1, pady=1)
+        faField.insert('end', participant.fa)
+
         noteLabel = tk.Label(self, text='Notiz')
-        noteLabel.grid(row=4, column=0, sticky=tk.W)
+        noteLabel.grid(row=6, column=0, sticky=tk.W)
 
         noteField = tk.Entry(self, width=_width)
-        noteField.grid(row=4, column=1)
+        noteField.grid(row=6, column=1)
         noteField.insert('end', participant.note)
         
-        addButton = tk.Button(self, text='Ändern', command=lambda: self.tryEditParticipant(participant, firstNameField.get(), lastNameField.get(), entryDateField.get(), exitDateField.get(), noteField.get()))
-        addButton.grid(row=5, column=0)
+        addButton = tk.Button(self, text='Ändern', command=lambda: self.tryEditParticipant(
+            participant, firstNameField.get(), lastNameField.get(), entryDateField.get(), exitDateField.get(), psfField.get(), faField.get(), noteField.get()))
+        addButton.grid(row=7, column=0)
 
         cancelButton = tk.Button(self, text='Abbrechen', command=self.destroy)
-        cancelButton.grid(row=5, column=1)   
-    def tryEditParticipant(self, participant, firstName, lastName, entryDate, exitDate, note=''):
-        tk.Event.data = [participant, firstName, lastName, entryDate, exitDate, note]  # type: ignore
+        cancelButton.grid(row=7, column=1)   
+    def tryEditParticipant(self, participant, firstName, lastName, entryDate, exitDate, psf, fa, note=''):
+        tk.Event.data = [participant, firstName, lastName, entryDate, exitDate, psf, fa, note]  # type: ignore
         self.event_generate('<<EditParticipant>>')     
 class MoveParticipantDialog(tk.Toplevel):
     def __init__(self, participant):

@@ -1,3 +1,5 @@
+- change on Seat moved
+- Updated icon images
 - Fixed Bog where you couldnt remove Participents from list
 - change gitignore
 - Fixed bug where when a Seat is selected participents in the list could not get modified added ask to save changes on close

@@ -57,6 +57,10 @@ class Config():
                 file.write(str(participant.firstName).encode('utf-16')[2:])
                 file.write(int(len(participant.lastName)).to_bytes(1, 'big'))
                 file.write(str(participant.lastName).encode('utf-16')[2:])
+                file.write(int(len(participant.psf)).to_bytes(1, 'big'))
+                file.write(str(participant.psf).encode('utf-16')[2:])
+                file.write(int(len(participant.fa)).to_bytes(1, 'big'))
+                file.write(str(participant.fa).encode('utf-16')[2:])
                 file.write(int(participant.entryDate.day).to_bytes(1, 'big'))
                 file.write(int(participant.entryDate.month).to_bytes(1, 'big'))
                 file.write(int(participant.entryDate.year).to_bytes(2, 'big'))
@@ -101,6 +105,10 @@ class Config():
                         firstName = file.read(2*lenFirstName).decode('utf-16')
                         lenLastName = int.from_bytes(file.read(1), 'big')
                         lastName = file.read(2*lenLastName).decode('utf-16')
+                        lenPsf = int.from_bytes(file.read(1), 'big')
+                        psf = file.read(2*lenPsf).decode('utf-16')
+                        lenFa = int.from_bytes(file.read(1), 'big')
+                        fa = file.read(2*lenFa).decode('utf-16')
                         entryDay = int.from_bytes(file.read(1), 'big')
                         entryMonth = int.from_bytes(file.read(1), 'big')
                         entryYear = int.from_bytes(file.read(2), 'big')
@@ -109,7 +117,7 @@ class Config():
                         exitYear = int.from_bytes(file.read(2), 'big')
                         lenNote = int.from_bytes(file.read(1), 'big')
                         note = file.read(2*lenNote).decode('utf-16')
-                        new_data.participants.append(data.Participant(firstName, lastName, date(entryYear, entryMonth, entryDay), date(exitYear, exitMonth, exitDay), note=note))
+                        new_data.participants.append(data.Participant(firstName, lastName, date(entryYear, entryMonth, entryDay), date(exitYear, exitMonth, exitDay), note=note, psf=psf, fa=fa))
                     for i in range(lenAssignments):
                         seat = new_data.seats[int.from_bytes(file.read(1), 'big')]
                         participant = new_data.participants[int.from_bytes(file.read(1), 'big')]

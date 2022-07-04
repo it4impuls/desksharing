@@ -46,16 +46,16 @@ class Data():
                                 return date(year, month, day)
         return Error('Kein gültiges Datum')
                 
-    def addParticipant(self, firstName, lastName, entryDate, exitDate, seat=None, note=''):
+    def addParticipant(self, firstName, lastName, entryDate, exitDate, seat=None, note='', psf:str='', fa:str=''):
         entryDate = self.stringToDate(entryDate)
         if isinstance(entryDate, Error):
             return Error('Eintrittsdatum: ') + entryDate
         exitDate = self.stringToDate(exitDate)
         if isinstance(exitDate, Error):
             return Error('Austrittsdatum: ') + exitDate
-        self.participants.append(Participant(firstName, lastName, entryDate, exitDate, seat, note))
+        self.participants.append(Participant(firstName, lastName, entryDate, exitDate, seat, note, psf, fa))
         return None  
-    def editParticipant(self, participant, firstName:str, lastName:str, entryDate, exitDate, note=''):
+    def editParticipant(self, participant, firstName:str, lastName:str, entryDate, exitDate, note='', psf:str='', fa:str=''):
         entryDate = self.stringToDate(entryDate)
         if isinstance(entryDate, Error):
             return Error('Eintrittsdatum: ') + entryDate
@@ -68,6 +68,8 @@ class Data():
         participant.entryDate = entryDate
         participant.exitDate = exitDate
         participant.note = note
+        participant.psf = psf
+        participant.fa = fa
     def moveParticipant(self, participant, newSeat, beginDate, endDate):
         beginDate = self.stringToDate(beginDate)
         if isinstance(beginDate, Error):
@@ -121,7 +123,10 @@ class Data():
                 assignment.seat.assignments.remove(assignment)
                 self.assignments.remove(assignment)
             self.participants.remove(self.participants[number])
-        if isinstance(participant, Participant):
+        elif isinstance(participant, Participant):
+            for assignment in participant.assignments:
+                assignment.seat.assignments.remove(assignment)
+                self.assignments.remove(assignment)
             self.participants.remove(participant)
         
     def removeParticipantFromSeat(self, participant, newSeat, beginDate, endDate):
@@ -140,13 +145,25 @@ class Data():
 
         participant.doAssignmentsByTime(beginDate, endDate, self.removeAssignment)
         self.assignments.append(Assignment(participant, newSeat, beginDate, endDate))
+    def removeSeat(self, seat):
+        if seat in self.seats:
+            for assignment in seat.assignments:
+                assert isinstance(assignment, Assignment)
+                assert isinstance(assignment.participant, Participant)
+                assignment.participant.assignments.remove(assignment)
+                self.assignments.remove(assignment)
+                seat.assignments.remove(assignment)
+            self.seats.remove(seat)
+
 
 class Participant():
-    def __init__(self, firstName:str, lastName:str, entryDate:date, exitDate:date, seat=None, note:str=''):
+    def __init__(self, firstName:str, lastName:str, entryDate:date, exitDate:date, seat=None, note:str='', psf:str='', fa:str=''):
         self.firstName = firstName
         self.lastName = lastName
         self.entryDate = entryDate
         self.exitDate = exitDate
+        self.psf = psf
+        self.fa = fa
         self.seat = seat
         self.note = note
         self.assignments = []
