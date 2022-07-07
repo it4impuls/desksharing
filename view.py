@@ -141,7 +141,8 @@ class View(tk.Tk):
                         self.draggedParticipant = None
                     elif event.data.num == 3:   # type: ignore #rightclick
                         self.showSeat = newSeat
-                        self.draggedParticipant = None
+                        self.event_generate('<<OpenMoveParticipantDialog>>')
+                        # self.draggedParticipant = None
                         #Kontextmenü
                         pass
                 else:
@@ -244,7 +245,7 @@ class View(tk.Tk):
             self.mainframe.sidebar.refresh()
     def openMoveParticipantDialog(self, event:tk.Event):
         newSeat = self.config.data.getSeat(event.data.x, event.data.y)  # type: ignore
-        if isinstance(newSeat, data.data.Seat):  # type: ignore
+        if isinstance(newSeat, data.Seat):  # type: ignore
             self.moveParticipantDialog = MoveParticipantDialog(self.draggedParticipant)
     def closeMoveParticipantDialog(self):
         self.moveParticipantDialog.destroy()
@@ -307,11 +308,12 @@ class View(tk.Tk):
     def openEditParticipantDialog(self, event:tk.Event):
         self.editParticipantDialog = EditParticipantDialog(event.data)  # type: ignore
     def editParticipant(self, event:tk.Event):
-        isEdited = self.config.data.editParticipant(event.data[0], event.data[1], event.data[2], event.data[3], event.data[4], note=event.data[5], psf=event.data[6], fa=event.data[7])  # type: ignore
+        isEdited = self.config.data.editParticipant(event.data[0], event.data[1], event.data[2], event.data[3], event.data[4], psf=event.data[5], fa=event.data[6], note=event.data[7], field=event.data[8])  # type: ignore
         if isinstance(isEdited, data.Error):
             messagebox.showerror("Error", isEdited.message)
         else:
             self.closeEditParticipantDialog()
+            self.changed = True
             self.mainframe.sidebar.refresh()
             self.mainframe.roommap.draw()
     def closeEditParticipantDialog(self):
@@ -428,19 +430,21 @@ class SideBar(tk.Frame):
         super().__init__(master, bd=1, relief=tk.RAISED)
         self.bind('<<Button>>', self.onClick)
 
-        self.table = ttk.Treeview(self, columns=('Name', 'StartDate', 'EndDate', 'psf', 'fa'), selectmode='browse')
+        self.table = ttk.Treeview(self, columns=('Name', 'StartDate', 'EndDate', 'psf', 'fa', 'field'), selectmode='browse')
         self.table.column('#0', width=0, minwidth=0, stretch=tk.NO)
-        self.table.column('Name', width=150, minwidth=150, stretch=tk.NO)
-        self.table.column('StartDate', width=100, minwidth=100, stretch=tk.NO)
-        self.table.column('EndDate', width=100, minwidth=100, stretch=tk.NO)
-        self.table.column('psf', width=100, minwidth=100, stretch=tk.NO)
-        self.table.column('fa', width=100, minwidth=100, stretch=tk.NO)
+        self.table.column('Name', width=120, minwidth=120, stretch=tk.NO)
+        self.table.column('StartDate', width=90, minwidth=90, stretch=tk.NO)
+        self.table.column('EndDate', width=90, minwidth=90, stretch=tk.NO)
+        self.table.column('psf', width=90, minwidth=90, stretch=tk.NO)
+        self.table.column('fa', width=90, minwidth=90, stretch=tk.NO)
+        self.table.column('field', width=90, minwidth=90, stretch=tk.NO)
         
         self.table.heading('Name', text='Name', anchor=tk.W)
         self.table.heading('StartDate', text='Eintrittsdatum', anchor=tk.W)
         self.table.heading('EndDate', text='Austrittsdatum', anchor=tk.W)
         self.table.heading('psf', text='PSF', anchor=tk.W)
         self.table.heading('fa', text='Fachanleitung', anchor=tk.W)
+        self.table.heading('field', text='Bereich', anchor=tk.W)
 
         self.table.bind('<Button>', self.onClick)
         # Triggers everywhere if pressed on sidebar, doesnt trigger if pressed anywhere else for some reason
@@ -464,7 +468,8 @@ class SideBar(tk.Frame):
         participants = self.master.config.data.participants
         for i in range(len(participants)):
             self.table.insert('', 'end', str(i), 
-                values=((participants[i].lastName + ', ' + participants[i].firstName), participants[i].entryDate.strftime('%d.%m.%Y'), participants[i].exitDate.strftime('%d.%m.%Y'), participants[i].psf, participants[i].fa))
+                values=((participants[i].lastName + ', ' + participants[i].firstName), participants[i].entryDate.strftime('%d.%m.%Y'), participants[i].exitDate.strftime('%d.%m.%Y'),
+                        participants[i].psf, participants[i].fa, participants[i].field))
         if self.master.showSeat != None:
             for i in range(len(self.master.showSeat.assignments)):
                 self.table.insert('', 'end', str(i), values=((self.master.showSeat.assignments[i].participant.lastName + ', ' + self.master.showSeat.assignments[i].participant.firstName), self.master.showSeat.assignments[i].begin.strftime('%d.%m.%Y'), self.master.showSeat.assignments[i].end.strftime('%d.%m.%Y')))
@@ -657,18 +662,24 @@ class AddParticipantDialog(tk.Toplevel):
         faField = tk.Entry(self, width=_width)
         faField.grid(row=5, column=1, pady=1)
 
+        fieldLabel = tk.Label(self, text='Bereich', justify=tk.LEFT)
+        fieldLabel.grid(row=6, column=0, sticky=tk.W, pady=1)
+
+        fieldField = tk.Entry(self, width=_width)
+        fieldField.grid(row=6, column=1, pady=1)
+
         noteLabel = tk.Label(self, text='Notiz')
-        noteLabel.grid(row=6, column=0, sticky=tk.W, pady=1)
+        noteLabel.grid(row=7, column=0, sticky=tk.W, pady=1)
 
         noteField = tk.Entry(self, width=_width)
-        noteField.grid(row=6, column=1, pady=1)
+        noteField.grid(row=7, column=1, pady=1)
         
         addCmd = lambda: self.tryAddParticipant(firstNameField.get(), lastNameField.get(), entryDateField.get(), exitDateField.get(), psfField.get(), faField.get(), noteField.get())
         addButton = tk.Button(self, text='Hinzufügen', command=addCmd)
-        addButton.grid(row=7, column=0, pady=1)
+        addButton.grid(row=8, column=0, pady=1)
 
         cancelButton = tk.Button(self, text='Abbrechen', command=self.destroy)
-        cancelButton.grid(row=7, column=1, pady=1)
+        cancelButton.grid(row=8, column=1, pady=1)
     def tryAddParticipant(self, firstName, lastName, entryDate, exitDate, psf, fa, note=''):
         tk.Event.data = [firstName, lastName, entryDate, exitDate, note, psf, fa]  # type: ignore
         self.event_generate('<<AddParticipant>>')
@@ -722,21 +733,28 @@ class EditParticipantDialog(tk.Toplevel):
         faField.grid(row=5, column=1, pady=1)
         faField.insert('end', participant.fa)
 
+        fieldLabel = tk.Label(self, text='Bereich', justify=tk.LEFT)
+        fieldLabel.grid(row=6, column=0, sticky=tk.W, pady=1)
+
+        fieldField = tk.Entry(self, width=_width)
+        fieldField.grid(row=6, column=1, pady=1)
+        fieldField.insert('end', participant.field)
+
         noteLabel = tk.Label(self, text='Notiz')
-        noteLabel.grid(row=6, column=0, sticky=tk.W)
+        noteLabel.grid(row=7, column=0, sticky=tk.W)
 
         noteField = tk.Entry(self, width=_width)
-        noteField.grid(row=6, column=1)
+        noteField.grid(row=7, column=1)
         noteField.insert('end', participant.note)
         
         addButton = tk.Button(self, text='Ändern', command=lambda: self.tryEditParticipant(
-            participant, firstNameField.get(), lastNameField.get(), entryDateField.get(), exitDateField.get(), psfField.get(), faField.get(), noteField.get()))
-        addButton.grid(row=7, column=0)
+            participant, firstNameField.get(), lastNameField.get(), entryDateField.get(), exitDateField.get(), psfField.get(), faField.get(), noteField.get(), fieldField.get()))
+        addButton.grid(row=8, column=0)
 
         cancelButton = tk.Button(self, text='Abbrechen', command=self.destroy)
-        cancelButton.grid(row=7, column=1)   
-    def tryEditParticipant(self, participant, firstName, lastName, entryDate, exitDate, psf, fa, note=''):
-        tk.Event.data = [participant, firstName, lastName, entryDate, exitDate, psf, fa, note]  # type: ignore
+        cancelButton.grid(row=8, column=1)   
+    def tryEditParticipant(self, participant, firstName, lastName, entryDate, exitDate, psf, fa, note='', field=''):
+        tk.Event.data = [participant, firstName, lastName, entryDate, exitDate, psf, fa, note, field]  # type: ignore
         self.event_generate('<<EditParticipant>>')     
 class MoveParticipantDialog(tk.Toplevel):
     def __init__(self, participant):

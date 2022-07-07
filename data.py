@@ -46,16 +46,16 @@ class Data():
                                 return date(year, month, day)
         return Error('Kein gültiges Datum')
                 
-    def addParticipant(self, firstName, lastName, entryDate, exitDate, seat=None, note='', psf:str='', fa:str=''):
+    def addParticipant(self, firstName, lastName, entryDate, exitDate, seat=None, note='', psf:str='', fa:str='', field:str=''):
         entryDate = self.stringToDate(entryDate)
         if isinstance(entryDate, Error):
             return Error('Eintrittsdatum: ') + entryDate
         exitDate = self.stringToDate(exitDate)
         if isinstance(exitDate, Error):
             return Error('Austrittsdatum: ') + exitDate
-        self.participants.append(Participant(firstName, lastName, entryDate, exitDate, seat, note, psf, fa))
+        self.participants.append(Participant(firstName, lastName, entryDate, exitDate, seat, note, psf, fa, field))
         return None  
-    def editParticipant(self, participant, firstName:str, lastName:str, entryDate, exitDate, note='', psf:str='', fa:str=''):
+    def editParticipant(self, participant, firstName:str, lastName:str, entryDate, exitDate, note='', psf:str='', fa:str='', field:str=''):
         entryDate = self.stringToDate(entryDate)
         if isinstance(entryDate, Error):
             return Error('Eintrittsdatum: ') + entryDate
@@ -70,6 +70,7 @@ class Data():
         participant.note = note
         participant.psf = psf
         participant.fa = fa
+        participant.field = field
     def moveParticipant(self, participant, newSeat, beginDate, endDate):
         beginDate = self.stringToDate(beginDate)
         if isinstance(beginDate, Error):
@@ -157,7 +158,7 @@ class Data():
 
 
 class Participant():
-    def __init__(self, firstName:str, lastName:str, entryDate:date, exitDate:date, seat=None, note:str='', psf:str='', fa:str=''):
+    def __init__(self, firstName:str, lastName:str, entryDate:date, exitDate:date, seat=None, note:str='', psf:str='', fa:str='', field:str = ''):
         self.firstName = firstName
         self.lastName = lastName
         self.entryDate = entryDate
@@ -166,6 +167,7 @@ class Participant():
         self.fa = fa
         self.seat = seat
         self.note = note
+        self.field = field
         self.assignments = []
         self.textIDs = []
     def doAssignmentsByTime(self, beginDate, endDate, func, exclude=False):
