@@ -1,3 +1,5 @@
+- added "field" var to Participent, fixed rightclick edit
+- Included PSF udn FA to participants
 - change on Seat moved
 - Updated icon images
 - Fixed Bog where you couldnt remove Participents from list

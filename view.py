@@ -236,7 +236,7 @@ class View(tk.Tk):
     def closeAddParticipantDialog(self):
         self.addParticipantDialog.destroy()
     def addParticipant(self, event:tk.Event):
-        isAdded = self.config.data.addParticipant(event.data[0], event.data[1], event.data[2], event.data[3], note=event.data[4], psf=event.data[5], fa=event.data[6])  # type: ignore
+        isAdded = self.config.data.addParticipant(event.data[0], event.data[1], event.data[2], event.data[3], note=event.data[4], psf=event.data[5], fa=event.data[6], field=event.data[7])  # type: ignore
         if isinstance(isAdded, data.Error):
             messagebox.showerror("Error", isAdded.message)
         else:
@@ -674,14 +674,15 @@ class AddParticipantDialog(tk.Toplevel):
         noteField = tk.Entry(self, width=_width)
         noteField.grid(row=7, column=1, pady=1)
         
-        addCmd = lambda: self.tryAddParticipant(firstNameField.get(), lastNameField.get(), entryDateField.get(), exitDateField.get(), psfField.get(), faField.get(), noteField.get())
+        addCmd = lambda: self.tryAddParticipant(
+            firstNameField.get(), lastNameField.get(), entryDateField.get(), exitDateField.get(), psfField.get(), faField.get(), noteField.get(), fieldField.get())
         addButton = tk.Button(self, text='Hinzufügen', command=addCmd)
         addButton.grid(row=8, column=0, pady=1)
 
         cancelButton = tk.Button(self, text='Abbrechen', command=self.destroy)
         cancelButton.grid(row=8, column=1, pady=1)
-    def tryAddParticipant(self, firstName, lastName, entryDate, exitDate, psf, fa, note=''):
-        tk.Event.data = [firstName, lastName, entryDate, exitDate, note, psf, fa]  # type: ignore
+    def tryAddParticipant(self, firstName, lastName, entryDate, exitDate, psf, fa, note='', field = ''):
+        tk.Event.data = [firstName, lastName, entryDate, exitDate, note, psf, fa, field]  # type: ignore
         self.event_generate('<<AddParticipant>>')
 class EditParticipantDialog(tk.Toplevel):
     def __init__(self, participant):
