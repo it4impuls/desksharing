@@ -1,5 +1,10 @@
 @ECHO OFF
-IF EXIST venv\ (
+SET env_foldername=venv
+SET modulefile=req.txt
+SET runfile=view.py
+SET root=%~dp0
+
+IF EXIST %env_foldername%\ (
 	GOTO runner
 )ELSE (
 GOTO installer
@@ -7,15 +12,16 @@ GOTO installer
 
 
 :installer
-ECHO instaling enviroment...
-START /B /WAIT py -m venv venv
+ECHO instaling enviroment (this might take a few minutes)...
+START /B /WAIT py -m venv %env_foldername%
 ECHO installing libraries...
-START /B /WAIT venv\Scripts\python.exe -m pip install -r req.txt
+IF EXIST %root%%modulefile% START /B /WAIT %root%%env_foldername%\Scripts\python.exe -m pip install -r %root%%modulefile%
+GOTO starter
 GOTO runner
 
 :runner
 ECHO starting programm...
-START /B /WAIT venv\Scripts\python.exe view.py
+START /B /WAIT %root%%env_foldername%\Scripts\python.exe %root%%runfile%
 GOTO end
 
 :end

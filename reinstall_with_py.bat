@@ -1,0 +1,1 @@
+py runWithEnv.py venv view.py req.txt -reinstall
